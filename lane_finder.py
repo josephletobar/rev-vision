@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from sklearn.cluster import KMeans
 
 # global variables for line tracking
 prev_left = None
@@ -27,6 +28,9 @@ def draw_lines(img):
     img = np.copy(img)
     blank_image = np.zeros(img.shape, dtype=np.uint8)
 
+    valid_lines = []
+    features = []
+
     if lines is not None:
         left_lines = []
         right_lines = []
@@ -34,21 +38,44 @@ def draw_lines(img):
         for line in lines:
             x1, y1, x2, y2 = line[0]
 
-            if x2 == x1:
+            if x2 == x1: # skip if horizontal
                 continue
 
-            slope = (y2 - y1) / (x2 - x1)
+            slope = (y2 - y1) / (x2 - x1)   # Slope of the line
             if abs(slope) < 2:
                 continue
 
+            valid_lines.append((x1, y1, x2, y2))  # Store this one since it's used
+
+            mid_x = (x1 + x2) / 2   # horizontal midpoint
+            features.append([slope, mid_x])     # save the features were using
+
+            # Draw good lines
             if slope < 0:
                 left_lines.append((x1, y1, x2, y2))
-                cv2.line(blank_image, (x1, y1), (x2, y2), (0, 0, 255), 15) # draw white line
-
+                # cv2.line(blank_image, (x1, y1), (x2, y2), (0, 0, 255), 15) # draw white line
             else:
                 right_lines.append((x1, y1, x2, y2))
-                cv2.line(blank_image, (x1, y1), (x2, y2), (255, 0, 0), 15)  # draw white line
- 
+                # cv2.line(blank_image, (x1, y1), (x2, y2), (255, 0, 0), 15)  # draw white line
+
+
+        # KMeans Fitting
+        kmeans = KMeans(n_clusters=4, n_init='auto')    # Initialize KMeans clustering with 4 target clusters
+        
+        labels = kmeans.fit_predict(features)   # labels[i] = cluster number (0–3) assigned to features[i]
+
+        colors = [
+            (0, 255, 0),    # Cluster 0: Green
+            (0, 0, 255),    # Cluster 1: Red
+            (255, 0, 0),    # Cluster 2: Blue
+            (0, 255, 255)   # Cluster 3: Yellow
+        ]
+
+        for i, (x1, y1, x2, y2) in enumerate(valid_lines):  # Use valid_lines
+            cluster_id = labels[i]
+            color = colors[cluster_id]
+            cv2.line(blank_image, (x1, y1), (x2, y2), color, 10)
+
 
     combined = cv2.addWeighted(img, 1.0, blank_image, 1.0, 0)
     return combined

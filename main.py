@@ -12,8 +12,7 @@ while cap.isOpened():
         print("Can't receive frame (stream end?). Exiting ...")
         break
     
-
-     # Draw lane lines on image
+    # Draw lane lines on image
     try:
         lane_detection = draw_lines(frame)
     except:
