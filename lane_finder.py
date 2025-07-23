@@ -42,10 +42,6 @@ def draw_lines(img):
             if abs(slope) < 2:
                 continue
 
-            # valid_lines.append((x1, y1, x2, y2))  # Store this one since it's used
-
-            mid_x = (x1 + x2) / 2   # horizontal midpoint
-
             # Draw good lines
             if slope < 0:
                 left_lines.append((x1, y1, x2, y2))
@@ -55,7 +51,6 @@ def draw_lines(img):
                 right_lines.append((x1, y1, x2, y2))
 
                 cv2.line(blank_image, (x1, y1), (x2, y2), (255, 0, 0), 15)  # draw white line
-
 
 
     combined = cv2.addWeighted(img, 1.0, blank_image, 1.0, 0)
