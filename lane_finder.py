@@ -28,15 +28,9 @@ def draw_lines(img):
     img = np.copy(img)
     blank_image = np.zeros(img.shape, dtype=np.uint8)
 
-    valid_lines = []
-    features = []
-
     if lines is not None:
         left_lines = []
         right_lines = []
-
-        left_features = []
-        right_features = []
 
         for line in lines:
             x1, y1, x2, y2 = line[0]
@@ -55,46 +49,13 @@ def draw_lines(img):
             # Draw good lines
             if slope < 0:
                 left_lines.append((x1, y1, x2, y2))
-                left_features.append([slope, mid_x])     # save the features were using
 
-                # cv2.line(blank_image, (x1, y1), (x2, y2), (0, 0, 255), 15) # draw white line
+                cv2.line(blank_image, (x1, y1), (x2, y2), (0, 0, 255), 15) # draw white line
             else:
                 right_lines.append((x1, y1, x2, y2))
-                right_features.append([slope, mid_x])     # save the features were using
 
-                # cv2.line(blank_image, (x1, y1), (x2, y2), (255, 0, 0), 15)  # draw white line
+                cv2.line(blank_image, (x1, y1), (x2, y2), (255, 0, 0), 15)  # draw white line
 
-
-        # KMeans Fitting
-        left_kmeans = KMeans(n_clusters=4, n_init='auto')    # Initialize KMeans clustering with 4 target clusters
-        right_kmeans = KMeans(n_clusters=4, n_init='auto')    # Initialize KMeans clustering with 4 target clusters
-
-        left_labels = left_kmeans.fit_predict(left_features)   # labels[i] = cluster number (0–3) assigned to features[i]
-        right_labels = right_kmeans.fit_predict(right_features)   # labels[i] = cluster number (0–3) assigned to features[i]
-
-        left_colors = [
-            (0, 255, 0),      # Cluster 0: Green
-            (0, 0, 255),      # Cluster 1: Red
-            (255, 0, 255),    # Cluster 2: Magenta
-            (128, 255, 0)     # Cluster 3: Lime-ish
-        ]
-
-        right_colors = [
-            (255, 0, 0),      # Cluster 0: Blue
-            (0, 255, 255),    # Cluster 1: Yellow
-            (255, 128, 0),    # Cluster 2: Orange
-            (255, 255, 255)   # Cluster 3: White
-        ]
-
-        for i, (x1, y1, x2, y2) in enumerate(left_lines):  # Use valid_lines
-            cluster_id = left_labels[i]
-            color = left_colors[cluster_id]
-            cv2.line(blank_image, (x1, y1), (x2, y2), color, 10)
-
-        for i, (x1, y1, x2, y2) in enumerate(right_lines):  # Use valid_lines
-            cluster_id = right_labels[i]
-            color = right_colors[cluster_id]
-            cv2.line(blank_image, (x1, y1), (x2, y2), color, 10)
 
 
     combined = cv2.addWeighted(img, 1.0, blank_image, 1.0, 0)
