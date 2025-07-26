@@ -7,17 +7,18 @@ prev_left = None
 prev_right = None
 alpha = 0.8  # smoothing factor (higher = smoother)
         
-def remove_line_outliers(lines, threshold=2.0):
-    lines = np.array(lines)
-    if len(lines) == 0:
+def remove_zscore_outliers(lines, threshold=1.0, coord_index=0):
+    if not lines or len(lines) < 2:
         return lines
+    
+    data = np.array(lines)
+    values = data[:, coord_index]  # e.g. x1 (index 0)
+    
+    mean = np.mean(values)
+    std = np.std(values)
+    z_scores = np.abs((values - mean) / std)
 
-    mean = np.mean(lines, axis=0)
-    dists = np.linalg.norm(lines - mean, axis=1) # Compute Euclidean distance from each line to the mean line
-    std = np.std(dists) # Compute standard deviation of those distances
-    limit = np.mean(dists) + threshold * std # Set distance cutoff: lines farther than this are outliers
-
-    return lines[dists < limit]
+    return data[z_scores < threshold].tolist()
 
 def draw_lines(img):
 
@@ -63,7 +64,13 @@ def draw_lines(img):
                 right_lines.append((x1, y1, x2, y2))
 
                 cv2.line(blank_image, (x1, y1), (x2, y2), (255, 0, 0), 15)  # draw white line
-            
+
+        try:    
+            left_lines = remove_zscore_outliers(left_lines)
+            right_lines = remove_zscore_outliers(right_lines)
+        except:
+            pass
+
         # average of left lines
         if left_lines:
             # left_lines = remove_line_outliers(left_lines)
@@ -81,20 +88,6 @@ def draw_lines(img):
 
             cv2.line(blank_image, (avg_left[0], avg_left[1]), (avg_left[2], avg_left[3]), (255, 255, 255), 15)
 
-            # if avg_left:
-            #     # Smooth left line
-            #     if prev_left is None:
-            #         smoothed_left = np.array(avg_left, dtype=np.float32)
-            #     else:
-            #         smoothed_left = 0.9 * prev_left + 0.1 * np.array(avg_left, dtype=np.float32)
-
-            #     prev_left = smoothed_left  # store smoothed value for next frame
-
-            #     # Draw smoothed line
-            #     x1, y1, x2, y2 = smoothed_left.astype(int)
-            #     cv2.line(blank_image, (x1, y1), (x2, y2), (0, 255, 0), 15)
-
-        
         # average of right lines
         if right_lines:
             x1s = [x1 for x1, y1, x2, y2 in right_lines]
