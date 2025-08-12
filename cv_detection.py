@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from lane_finder import draw_lines
+from cv_utils.lane_finder import draw_lines
 
 cap = cv2.VideoCapture('bowling.mp4')
 

@@ -37,4 +37,4 @@ for epoch in range(50):
     print(f"Epoch {epoch+1} Loss: {total_loss:.4f}")
 
 torch.save(model.state_dict(), "lane_model.pth")
-print("✅ Model saved to lane_model.pth")
+print("Model saved to lane_model.pth")

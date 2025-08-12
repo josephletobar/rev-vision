@@ -19,4 +19,4 @@ def extract_frames(video_path, output_dir, step=30):
 
     cap.release()
 
-extract_frames("bowling.mp4", "data/images")
+extract_frames("bowling2.mp4", "data/images2")
