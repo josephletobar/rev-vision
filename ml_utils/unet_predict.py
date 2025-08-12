@@ -3,7 +3,8 @@ import torch
 from PIL import Image
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
-from unet import UNet 
+from ml_utils.unet import UNet 
+import numpy as np
 
 # Load model 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,8 +20,15 @@ transform = T.Compose([
 ])
 
 # Predict function
-def predict(image_path):
-    image = Image.open(image_path).convert("RGB")
+def predict(input_data):
+
+    if isinstance(input_data, str):  # filepath
+        image = Image.open(input_data).convert("RGB")
+    elif isinstance(input_data, np.ndarray):  # numpy array (BGR from OpenCV)
+        image = Image.fromarray(input_data[..., ::-1])  # convert BGR to RGB
+    else:
+        raise TypeError("Input must be a filepath or a numpy array")
+
     input_tensor = transform(image).unsqueeze(0).to(device)
 
     with torch.no_grad(): 
