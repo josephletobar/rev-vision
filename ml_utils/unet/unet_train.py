@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from lane_dataset import LaneDataset
-from ml_utils.unet import UNet
+from ml_utils.unet.unet_model import UNet
 
 device = torch.device("cpu")
 

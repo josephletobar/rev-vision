@@ -3,6 +3,11 @@ import numpy as np
 
 
 def post_processing(mask, frame):
+    # Mask size threshhold
+    min_fraction = 0.01
+    mask_fraction = np.count_nonzero(mask) / mask.size
+    if mask_fraction < min_fraction:
+        return frame # skip overlay if too small
 
     # Convert mask from single-channel float array to 8-bit 3-channel format
     mask_uint8 = (mask * 255).astype(np.uint8)  # convert from 0/1 float to 0-255 uint8

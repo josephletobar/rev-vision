@@ -3,7 +3,7 @@ import torch
 from PIL import Image
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
-from ml_utils.unet import UNet 
+from ml_utils.unet.unet_model import UNet 
 import numpy as np
 
 # Load model 
@@ -20,7 +20,7 @@ transform = T.Compose([
 ])
 
 # Predict function
-def predict(input_data):
+def unet_predict(input_data):
 
     if isinstance(input_data, str):  # filepath
         image = Image.open(input_data).convert("RGB")
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         if not filename.endswith(".png"): continue
         img_path = os.path.join(test_dir, filename)
 
-        img, pred = predict(img_path)
+        img, pred = unet_predict(img_path)
 
         # Set up a plot
         plt.figure(figsize=(10, 4))

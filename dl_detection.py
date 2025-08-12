@@ -2,7 +2,8 @@ import argparse
 import matplotlib.pylab as plt
 import cv2
 import numpy as np
-from ml_utils.unet_predict import predict
+from ml_utils.unet.unet_predict import unet_predict
+from ml_utils.deeplab_predict import deeplab_predict
 from cv_utils.mask_post_processing import post_processing
 
 # Parse arguments
@@ -11,7 +12,7 @@ parser.add_argument("--video", type=str, required=True, help="Path to video file
 args = parser.parse_args()
 
 # Load weights
-weights = "road_deeplab_model2"
+weights = "ml_utils/weights/lane_deeplab_model.pth"
 
 # For video processing
 cap = cv2.VideoCapture(args.video)
@@ -21,7 +22,7 @@ while(cap.isOpened()):
     if not ret:
         break  # Exit if frame wasn't read
     
-    _, pred_mask = predict(frame) # run model on current frame to get its prediction mask
+    _, pred_mask = deeplab_predict(frame, weights) # run model on current frame to get its prediction mask
     result = post_processing(pred_mask, frame) 
 
     cv2.imshow("Video", result)
