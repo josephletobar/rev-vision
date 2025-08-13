@@ -2,7 +2,6 @@ import argparse
 import matplotlib.pylab as plt
 import cv2
 import numpy as np
-from ml_utils.unet.unet_predict import unet_predict
 from ml_utils.deeplab_predict import deeplab_predict
 from cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
 
