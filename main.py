@@ -4,9 +4,11 @@ import cv2
 import numpy as np
 from ml_utils.unet.unet_predict import unet_predict
 from ml_utils.deeplab_predict import deeplab_predict
-from cv_utils.mask_post_processing import OverlayProcessor
+from cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
 
 overlay = OverlayProcessor()
+
+extract = ExtractProcessor()
 
 # Parse arguments
 parser = argparse.ArgumentParser(description="Lane Assist Video Processing")
@@ -24,10 +26,15 @@ while(cap.isOpened()):
     if not ret:
         break  # Exit if frame wasn't read
     
-    _, pred_mask = deeplab_predict(frame, weights) # run model on current frame to get its prediction mask
+    # Run model on current frame to get its prediction mask
+    _, pred_mask = deeplab_predict(frame, weights) 
     result = overlay.apply(pred_mask, frame) 
 
-    cv2.imshow("Video", result)
+    extraction = extract.apply(pred_mask, frame)
+    if extraction is not None:
+        cv2.imshow("Lane Cutout", extraction)
+
+    cv2.imshow("Lane Overlay", result)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break  # Exit on 'q' key
 

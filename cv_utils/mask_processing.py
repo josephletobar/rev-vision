@@ -43,27 +43,29 @@ class OverlayProcessor(BaseMaskProcessor):
 
         # blend
         return cv2.addWeighted(frame, 1.0, smoothed, self.alpha, 0)
+    
+class ExtractProcessor(BaseMaskProcessor):
+    def __init__(self, tight_crop=True, **kw):
+        super().__init__(**kw)
+        self.tight_crop = tight_crop
 
-# Testing
-if __name__ == "__main__":
+    def apply(self, mask, frame):
+        m = self._prep_mask(mask, frame)
+        if m is None:
+            return None  # no valid mask this frame
 
-    processor = OverlayProcessor()
+        # Keep only the lane pixels from the frame
+        cutout = cv2.bitwise_and(frame, frame, mask=m)
 
-    weights = "lane_deeplab_model"
-    test_video = "bowling"
-    cap = cv2.VideoCapture(f'test_videos/{test_video}.mp4')
+        if not self.tight_crop:
+            return cutout
 
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        if not ret:
-            break  # Exit if frame wasn't read
-        
-        _, pred_mask = deeplab_predict(frame, weights) # run model on current frame to get its prediction mask
-        result = processor.apply(pred_mask, frame) 
+        # Tight crop to lane bounding box
+        ys, xs = np.where(m > 0)
+        if xs.size == 0 or ys.size == 0:
+            return None
+        x0, x1 = xs.min(), xs.max()
+        y0, y1 = ys.min(), ys.max()
+        return cutout[y0:y1+1, x0:x1+1]
+    
 
-        cv2.imshow("Video", result)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break  # Exit on 'q' key
-
-    cap.release()
-    cv2.destroyAllWindows()
