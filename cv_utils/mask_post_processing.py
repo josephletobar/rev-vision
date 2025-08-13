@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+from ml_utils.deeplab_predict import deeplab_predict
 
 def post_processing(mask, frame):
     # Mask size threshhold
@@ -21,7 +21,7 @@ def post_processing(mask, frame):
     colored_mask = cv2.resize(colored_mask, (frame.shape[1], frame.shape[0]))
 
     # Smooth Borders
-    mask_blurred = cv2.GaussianBlur(colored_mask, (121, 121), 0) # Gaussian blur with 121x121 kernel
+    mask_blurred = cv2.GaussianBlur(colored_mask, (191, 191), 0) # Gaussian blur with 121x121 kernel
     _, mask_smoothed = cv2.threshold(mask_blurred, 120, 255, cv2.THRESH_BINARY) # Convert to binary mask: pixels>120 set to 255 (white), 
                                                                                # others to 0 (black) using binary thresdhold
 
@@ -31,22 +31,22 @@ def post_processing(mask, frame):
     return output
 
 # Testing
-# if __name__ == "__main__":
-#     weights = "road_deeplab_model2"
-#     test_video = "test1"
-#     cap = cv2.VideoCapture(f'test_videos/{test_video}.mp4')
+if __name__ == "__main__":
+    weights = "lane_deeplab_model"
+    test_video = "bowling"
+    cap = cv2.VideoCapture(f'test_videos/{test_video}.mp4')
 
-#     while(cap.isOpened()):
-#         ret, frame = cap.read()
-#         if not ret:
-#             break  # Exit if frame wasn't read
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if not ret:
+            break  # Exit if frame wasn't read
         
-#         _, pred_mask = deeplab_predict(frame, weights) # run model on current frame to get its prediction mask
-#         result = post_processing(pred_mask, frame) 
+        _, pred_mask = deeplab_predict(frame, weights) # run model on current frame to get its prediction mask
+        result = post_processing(pred_mask, frame) 
 
-#         cv2.imshow("Video", result)
-#         if cv2.waitKey(1) & 0xFF == ord('q'):
-#             break  # Exit on 'q' key
+        cv2.imshow("Video", result)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break  # Exit on 'q' key
 
-#     cap.release()
-#     cv2.destroyAllWindows()
+    cap.release()
+    cv2.destroyAllWindows()

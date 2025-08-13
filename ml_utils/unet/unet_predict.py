@@ -9,7 +9,7 @@ import numpy as np
 # Load model 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = UNet()  # use same init as in train.py
-model.load_state_dict(torch.load("ml_utils/weights/lane_unet_model.pth", map_location=device))
+model.load_state_dict(torch.load("ml_utils/weights/lane_unet_model.pth", map_location=device, weights_only=True))
 model.to(device)
 model.eval()
 

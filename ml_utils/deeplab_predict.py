@@ -11,7 +11,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_model(weights):
     model = get_deeplab_model(device=device)  # initialize DeepLab model
-    model.load_state_dict(torch.load(weights, map_location=device))
+    model.load_state_dict(torch.load(weights, map_location=device, weights_only=True))
     model.to(device)
     model.eval()
     return model
