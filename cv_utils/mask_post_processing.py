@@ -2,36 +2,53 @@ import cv2
 import numpy as np
 from ml_utils.deeplab_predict import deeplab_predict
 
-def post_processing(mask, frame):
-    # Mask size threshhold
-    min_fraction = 0.01
-    mask_fraction = np.count_nonzero(mask) / mask.size
-    if mask_fraction < min_fraction:
-        return frame # skip overlay if too small
+# Validate and normalize mask for further processing
+class BaseMaskProcessor:
+    def __init__(self, min_fraction=0.01, bin_thresh=0.5, resize_to_frame=True):
+        self.min_fraction = min_fraction
+        self.bin_thresh = bin_thresh
+        self.resize_to_frame = resize_to_frame
 
-    # Convert mask from single-channel float array to 8-bit 3-channel format
-    mask_uint8 = (mask * 255).astype(np.uint8)  # convert from 0/1 float to 0-255 uint8
-    mask_color = cv2.cvtColor(mask_uint8, cv2.COLOR_GRAY2BGR)  # Convert to 3 channels of color
+    def _prep_mask(self, mask, frame):
+        # resize to frame size if it isnt already
+        if self.resize_to_frame and (mask.shape[:2] != frame.shape[:2]):
+            mask = cv2.resize(mask, (frame.shape[1], frame.shape[0]))
+        # size threshold
+        if (np.count_nonzero(mask) / mask.size) < self.min_fraction:
+            return None  # dont count small masks
+        # binarize for OpenCV use: {0,255} uint8 
+        m = ((mask > self.bin_thresh).astype(np.uint8) * 255)
+        return m
 
-    # Multiply mask_color by green tint
-    colored_mask = np.zeros_like(mask_color)
-    colored_mask[:, :, 1] = mask_color[:, :, 1]  # green channel only
+class OverlayProcessor(BaseMaskProcessor):
+    def __init__(self, blur_kernel=191, thresh=120, alpha=0.5, **kw):
+        super().__init__(**kw)
+        self.blur_kernel = blur_kernel
+        self.thresh = thresh
+        self.alpha = alpha
 
-    # Resize mask to match frame size (resize colored_mask, not mask_color)
-    colored_mask = cv2.resize(colored_mask, (frame.shape[1], frame.shape[0]))
+    def apply(self, mask, frame):
+        m = self._prep_mask(mask, frame)
+        if m is None:
+            return frame
 
-    # Smooth Borders
-    mask_blurred = cv2.GaussianBlur(colored_mask, (191, 191), 0) # Gaussian blur with 121x121 kernel
-    _, mask_smoothed = cv2.threshold(mask_blurred, 120, 255, cv2.THRESH_BINARY) # Convert to binary mask: pixels>120 set to 255 (white), 
-                                                                               # others to 0 (black) using binary thresdhold
+        # green tint mask
+        mask_color = cv2.cvtColor(m, cv2.COLOR_GRAY2BGR)
+        colored = np.zeros_like(mask_color)
+        colored[:, :, 1] = mask_color[:, :, 1]
 
-    # Blend with frame
-    output = cv2.addWeighted(frame, 1.0, mask_smoothed, 0.5, 0)
+        # soften edges and binarize
+        blurred = cv2.GaussianBlur(colored, (self.blur_kernel, self.blur_kernel), 0)
+        _, smoothed = cv2.threshold(blurred, self.thresh, 255, cv2.THRESH_BINARY)
 
-    return output
+        # blend
+        return cv2.addWeighted(frame, 1.0, smoothed, self.alpha, 0)
 
 # Testing
 if __name__ == "__main__":
+
+    processor = OverlayProcessor()
+
     weights = "lane_deeplab_model"
     test_video = "bowling"
     cap = cv2.VideoCapture(f'test_videos/{test_video}.mp4')
@@ -42,7 +59,7 @@ if __name__ == "__main__":
             break  # Exit if frame wasn't read
         
         _, pred_mask = deeplab_predict(frame, weights) # run model on current frame to get its prediction mask
-        result = post_processing(pred_mask, frame) 
+        result = processor.apply(pred_mask, frame) 
 
         cv2.imshow("Video", result)
         if cv2.waitKey(1) & 0xFF == ord('q'):
