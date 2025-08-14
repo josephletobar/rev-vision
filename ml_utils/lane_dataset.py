@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 import torchvision.transforms as T
 
 class LaneDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, size=(256, 256)):
+    def __init__(self, image_dir, mask_dir, size=(960, 720)):
         self.image_dir = image_dir 
         self.mask_dir = mask_dir
 

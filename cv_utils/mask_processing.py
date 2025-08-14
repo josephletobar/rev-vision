@@ -21,7 +21,7 @@ class BaseMaskProcessor:
         return m
 
 class OverlayProcessor(BaseMaskProcessor):
-    def __init__(self, blur_kernel=191, thresh=120, alpha=0.5, **kw):
+    def __init__(self, blur_kernel=41, thresh=80, alpha=0.5, **kw):
         super().__init__(**kw)
         self.blur_kernel = blur_kernel
         self.thresh = thresh
@@ -53,9 +53,16 @@ class ExtractProcessor(BaseMaskProcessor):
         m = self._prep_mask(mask, frame)
         if m is None:
             return None  # no valid mask this frame
+        
+        # Smooth lines
+        # TODO: use class
+        # soften edges and binarize
+        blurred = cv2.GaussianBlur(m, (41, 41), 0)
+        _, smoothed = cv2.threshold(blurred, 80, 255, cv2.THRESH_BINARY)
+        
 
         # Keep only the lane pixels from the frame
-        cutout = cv2.bitwise_and(frame, frame, mask=m)
+        cutout = cv2.bitwise_and(frame, frame, mask=smoothed)
 
         if not self.tight_crop:
             return cutout

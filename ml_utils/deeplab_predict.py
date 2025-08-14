@@ -18,7 +18,7 @@ def load_model(weights):
 
 # Transform 
 transform = T.Compose([
-    T.Resize((256, 256)),
+    T.Resize((960, 720)),
     T.ToTensor(),
 ])
 

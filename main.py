@@ -4,9 +4,9 @@ import cv2
 import numpy as np
 from ml_utils.deeplab_predict import deeplab_predict
 from cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
+from cv_utils.ball_detection import detect_ball
 
 overlay = OverlayProcessor()
-
 extract = ExtractProcessor()
 
 # Parse arguments
@@ -15,7 +15,7 @@ parser.add_argument("--video", type=str, required=True, help="Path to video file
 args = parser.parse_args()
 
 # Load weights
-weights = "ml_utils/weights/lane_deeplab_model.pth"
+weights = "ml_utils/weights/lane_deeplab_model_2.pth"
 
 # For video processing
 cap = cv2.VideoCapture(args.video)
@@ -30,6 +30,9 @@ while(cap.isOpened()):
     result = overlay.apply(pred_mask, frame) 
 
     extraction = extract.apply(pred_mask, frame)
+        
+    # detect_ball(extraction)
+
     if extraction is not None:
         cv2.imshow("Lane Cutout", extraction)
 
