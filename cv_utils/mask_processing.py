@@ -4,10 +4,15 @@ from ml_utils.deeplab_predict import deeplab_predict
 
 # Validate and normalize mask for further processing
 class BaseMaskProcessor:
-    def __init__(self, min_fraction=0.01, bin_thresh=0.5, resize_to_frame=True):
+    def __init__(self, min_fraction=0.01, bin_thresh=0.5, resize_to_frame=True,
+                blur_kernel=41, post_thresh=140):
+        # prep_mask
         self.min_fraction = min_fraction
         self.bin_thresh = bin_thresh
         self.resize_to_frame = resize_to_frame
+        # smooth mask
+        self.blur_kernel = blur_kernel      
+        self.post_thresh = post_thresh     
 
     def _prep_mask(self, mask, frame):
         # resize to frame size if it isnt already
@@ -19,6 +24,12 @@ class BaseMaskProcessor:
         # binarize for OpenCV use: {0,255} uint8 
         m = ((mask > self.bin_thresh).astype(np.uint8) * 255)
         return m
+    
+    def _smooth_mask(self, mask):
+        # soften edges and binarize
+        blurred = cv2.GaussianBlur(mask, (self.blur_kernel, self.blur_kernel), 0)
+        _, m_smoothed = cv2.threshold(blurred, self.post_thresh, 255, cv2.THRESH_BINARY)
+        return m_smoothed
 
 class OverlayProcessor(BaseMaskProcessor):
     def __init__(self, blur_kernel=41, thresh=140, alpha=0.5, **kw):
@@ -38,8 +49,7 @@ class OverlayProcessor(BaseMaskProcessor):
         colored[:, :, 1] = mask_color[:, :, 1]
 
         # soften edges and binarize
-        blurred = cv2.GaussianBlur(colored, (self.blur_kernel, self.blur_kernel), 0)
-        _, smoothed = cv2.threshold(blurred, self.thresh, 255, cv2.THRESH_BINARY)
+        smoothed = self._smooth_mask(colored)
 
         # blend
         return cv2.addWeighted(frame, 1.0, smoothed, self.alpha, 0)
@@ -54,13 +64,9 @@ class ExtractProcessor(BaseMaskProcessor):
         if m is None:
             return None  # no valid mask this frame
         
-        # Smooth lines
-        # TODO: use class
         # soften edges and binarize
-        blurred = cv2.GaussianBlur(m, (41, 41), 0)
-        _, smoothed = cv2.threshold(blurred, 140, 255, cv2.THRESH_BINARY)
+        smoothed = self._smooth_mask(m)
         
-
         # Keep only the lane pixels from the frame
         cutout = cv2.bitwise_and(frame, frame, mask=smoothed)
 
