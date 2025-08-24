@@ -35,13 +35,13 @@ while(cap.isOpened()):
     warp = perspective.warp(frame, extraction) # get the birds eye view of the mask
     detect_ball(extraction, preview)
 
-    # cv2.imshow("Lane Overlay", frame)
-    # if cv2.waitKey(1) & 0xFF == ord('q'):
-    #     break  # Exit on 'q' key
-
-    cv2.imshow("Test", preview)
+    cv2.imshow("Lane Overlay", preview)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break  # Exit on 'q' key
+
+    # cv2.imshow("Test", frame)
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break  # Exit on 'q' key
 
 cap.release()
 cv2.destroyAllWindows()
