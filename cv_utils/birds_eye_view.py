@@ -58,10 +58,11 @@ class BirdsEyeTransformer:
         src = np.float32(corners)  # TL, TR, BR, BL
 
         Wout, Hout = self.out_size
-        dst = np.float32([[0,0],
-                        [Wout-1,0],
-                        [Wout-1,Hout-1],
-                        [0,Hout-1]])
+        dst = np.float32([[0,0],   # TL
+                  [Wout-1,0],      # TR
+                  [Wout-1,Hout-1], # BR
+                  [0,Hout-1]       # BL
+                 ])
 
         M = cv2.getPerspectiveTransform(src, dst)
         return cv2.warpPerspective(frame, M, (Wout, Hout))

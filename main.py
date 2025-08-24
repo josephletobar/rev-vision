@@ -34,7 +34,7 @@ while(cap.isOpened()):
     extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
     warp = perspective.warp(frame, extraction) # get the birds eye view of the mask
 
-    cv2.imshow("Lane Overlay", preview)
+    cv2.imshow("Lane Overlay", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break  # Exit on 'q' key
 

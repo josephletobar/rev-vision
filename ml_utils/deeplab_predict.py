@@ -9,7 +9,7 @@ from ml_utils.deeplab_model import get_deeplab_model
 # Load model 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-print(f"Running on device: {device}")
+# print(f"Running on device: {device}")
 
 def load_model(weights):
     model = get_deeplab_model(device=device)  # initialize DeepLab model
