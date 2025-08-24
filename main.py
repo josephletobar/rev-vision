@@ -30,14 +30,12 @@ while(cap.isOpened()):
     _, pred_mask = deeplab_predict(frame, weights) 
     result = overlay.apply(pred_mask, frame) 
 
-    extraction = extract.apply(pred_mask, frame)
+    extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
+
     extraction = get_mask_corners(extraction)
-
-        
     # detect_ball(extraction)
-
-    if extraction is not None:
-        cv2.imshow("Lane Cutout", extraction)
+    # if extraction is not None:
+    #     cv2.imshow("Lane Cutout", extraction)
 
     cv2.imshow("Lane Overlay", result)
     if cv2.waitKey(1) & 0xFF == ord('q'):
