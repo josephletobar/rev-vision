@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 class BirdsEyeTransformer:
-    def __init__(self, out_size=(400, 900)):
+    def __init__(self, out_size=(400, 1600)):
         self.out_size = out_size
 
     def _get_mask_corners(self, mask: np.ndarray, debug: bool=False):
@@ -14,21 +14,22 @@ class BirdsEyeTransformer:
         mask: binary (0/255)
         returns 4 corner points (TL, TR, BR, BL) as float32
         """
-        # grow the mask outwards so its edges expand until the image border cuts them flat
-        k = np.ones((25,5), np.uint8)   # "radius" of expansion
-        mask = cv2.dilate(mask, k, iterations=1)
 
         ys, xs = np.where(mask > 127) # return pixel coords where the mask pixel value is > 0
 
         if len(xs) == 0:
             return None
         
-        ytop = ys.min()    # top row of the mask
+        offset = int(0.05 * (ys.max() - ys.min())) # offset to go x% up/down into the mask to ignore curve
+
+        # top row of the mask
+        ytop = ys.min() + offset
         xs_top = xs[ys == ytop]
         TL = (xs_top.min(), ytop)
         TR = (xs_top.max(), ytop)
 
-        ybot = ys.max()   # bottom row of the mask
+        # bottom row of the mask
+        ybot = ys.max() - offset
         xs_bot = xs[ys == ybot]
         BL = (xs_bot.min(), ybot)
         BR = (xs_bot.max(), ybot)
@@ -42,10 +43,10 @@ class BirdsEyeTransformer:
             f"BL: ({int(BL[0])}, {int(BL[1])}), "
             f"BR: ({int(BR[0])}, {int(BR[1])})")
             # Show corners
-            cv2.circle(vis, TL, 7, (0,0,255), -1) # Red
-            cv2.circle(vis, TR, 7, (0,255,0), -1) # Green
-            cv2.circle(vis, BL, 7, (255,0,0), -1) # Blue
-            cv2.circle(vis, BR, 7, (0,255,255), -1) # Yellow
+            cv2.circle(vis, TL, 17, (0,0,255), -1) # Red
+            cv2.circle(vis, TR, 17, (0,255,0), -1) # Green
+            cv2.circle(vis, BL, 17, (255,0,0), -1) # Blue
+            cv2.circle(vis, BR, 17, (0,255,255), -1) # Yellow
             cv2.imshow("Corner Visualization", vis)
 
         return TL, TR, BR, BL
