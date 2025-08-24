@@ -5,6 +5,7 @@ import numpy as np
 from ml_utils.deeplab_predict import deeplab_predict
 from cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
 from cv_utils.ball_detection import detect_ball
+from cv_utils.birds_eye_view import get_mask_corners
 
 overlay = OverlayProcessor()
 extract = ExtractProcessor()
@@ -30,6 +31,8 @@ while(cap.isOpened()):
     result = overlay.apply(pred_mask, frame) 
 
     extraction = extract.apply(pred_mask, frame)
+    extraction = get_mask_corners(extraction)
+
         
     # detect_ball(extraction)
 
