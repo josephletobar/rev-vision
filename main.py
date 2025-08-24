@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 from ml_utils.deeplab_predict import deeplab_predict
 from cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
-from cv_utils.ball_detection import detect_ball
 from cv_utils.birds_eye_view import BirdsEyeTransformer
+from cv_utils.ball_detection import detect_ball
 
 overlay = OverlayProcessor()
 extract = ExtractProcessor()
@@ -29,16 +29,16 @@ while(cap.isOpened()):
     
     # Run model on current frame to get its prediction mask
     _, pred_mask = deeplab_predict(frame, weights) 
-    result = overlay.apply(pred_mask, frame) 
+    preview = overlay.apply(pred_mask, frame) 
 
     extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
-    warp = perspective.warp(frame, extraction) # get the birds eye view of it
-    
-    # detect_ball(extraction)
-    # if extraction is not None:
-    #     cv2.imshow("Lane Cutout", extraction)
+    warp = perspective.warp(frame, extraction) # get the birds eye view of the mask
 
-    cv2.imshow("Lane Overlay", result)
+    cv2.imshow("Lane Overlay", preview)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break  # Exit on 'q' key
+
+    cv2.imshow("Test", warp)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break  # Exit on 'q' key
 

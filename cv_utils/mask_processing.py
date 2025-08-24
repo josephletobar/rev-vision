@@ -55,7 +55,7 @@ class OverlayProcessor(BaseMaskProcessor):
         return cv2.addWeighted(frame, 1.0, smoothed, self.alpha, 0)
     
 class ExtractProcessor(BaseMaskProcessor):
-    def __init__(self, tight_crop=True, **kw):
+    def __init__(self, tight_crop=False, **kw):
         super().__init__(**kw)
         self.tight_crop = tight_crop
 
