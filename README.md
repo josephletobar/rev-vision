@@ -9,7 +9,6 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 - **Output Metrics**: Produces insights such as ball trajectory, lane alignment, and shot visualizations.
 
 <p align="center">
-  <img src="assets/input.gif" alt="Input Video" width="45%"/>
   <img src="assets/output.gif" alt="Output Video" width="45%"/>
 </p>
 
