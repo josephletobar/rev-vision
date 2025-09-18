@@ -8,6 +8,11 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 - **Ball Detection & Tracking**: Identifies the bowling ball and follows its motion through each shot.
 - **Output Metrics**: Produces insights such as ball trajectory, lane alignment, and shot visualizations.
 
+<p align="center">
+  <img src="assets/input.gif" alt="Input Video" width="45%"/>
+  <img src="assets/output.gif" alt="Output Video" width="45%"/>
+</p>
+
 ## Project Status and Future Work
 - **Implemented**: Lane segmentation pipeline and bowling ball tracking modules are operational.
 - **In Progress**: Data analysis pipeline that converts tracked data into structured metrics and reports.
