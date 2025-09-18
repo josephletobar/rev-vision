@@ -15,7 +15,7 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 ## Project Status and Future Work
 - **Implemented**: Lane segmentation pipeline and bowling ball tracking modules are operational.
 - **In Progress**: Data analysis pipeline that converts tracked data into structured metrics and reports.
-- **Planned**: Add shot accuracy scores and richer performance analytics per session, extend the framework to other sports or human-movement analysis tasks, and optimize processing for lower latency and more responsive feedback.
+- **Planned**: Output metrics such as ball trajectory, lane alignment, and shot visualizations; shot accuracy scores and richer performance analytics per session; extension to other sports or human-movement analysis tasks; optimization for lower latency and more responsive feedback.
 
 ## Basic Usage Instructions
 1. **Setup**
