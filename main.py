@@ -14,6 +14,7 @@ perspective = BirdsEyeTransformer()
 # Parse arguments
 parser = argparse.ArgumentParser(description="Lane Assist Video Processing")
 parser.add_argument("--video", type=str, required=True, help="Path to video file")
+parser.add_argument("--output", type=str, help="Path to save output video (optional)")
 args = parser.parse_args()
 
 # Load weights
@@ -22,26 +23,41 @@ weights = "ml_utils/weights/lane_deeplab_model_2.pth"
 # For video processing
 cap = cv2.VideoCapture(args.video)
 
-while(cap.isOpened()):
-    ret, frame = cap.read()
-    if not ret:
-        break  # Exit if frame wasn't read
-    
-    # Run model on current frame to get its prediction mask
-    _, pred_mask = deeplab_predict(frame, weights) 
-    preview = overlay.apply(pred_mask, frame) 
+out = None
+if args.output:
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    out = cv2.VideoWriter(args.output, fourcc, fps, (width, height))
 
-    extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
-    warp = perspective.warp(frame, extraction) # get the birds eye view of the mask
-    detect_ball(extraction, preview)
+try:
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if not ret:
+            break  # Exit if frame wasn't read
+        
+        # Run model on current frame to get its prediction mask
+        _, pred_mask = deeplab_predict(frame, weights) 
+        preview = overlay.apply(pred_mask, frame) 
 
-    cv2.imshow("Lane Overlay", preview)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break  # Exit on 'q' key
+        extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
+        if extraction is not None:
+            warp = perspective.warp(frame, extraction) # get the birds eye view of the mask
+            detect_ball(extraction, preview)
 
-    # cv2.imshow("Test", frame)
-    # if cv2.waitKey(1) & 0xFF == ord('q'):
-    #     break  # Exit on 'q' key
+        cv2.imshow("Lane Overlay", preview)
+        if out:
+            out.write(preview)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break  # Exit on 'q' key
 
-cap.release()
-cv2.destroyAllWindows()
+        # cv2.imshow("Test", frame)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break  # Exit on 'q' key
+
+finally:
+    cap.release()
+    if out:
+        out.release()
+    cv2.destroyAllWindows()
