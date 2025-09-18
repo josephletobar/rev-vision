@@ -1,6 +1,5 @@
 # RevVision
 
-## Project Overview
 RevVision delivers human-centered sports analytics using Meta glasses for computer vision, currently focused on bowling. The system extracts information from a first-person wearable perspective to help users understand their performance. This work advances sports analytics from a human-centered, wearable-device viewpoint, with applications in accessibility, coaching, and AR-enhanced interaction. It also connects to broader research in computer vision and human-computer interaction.
 
 ## Key Features
