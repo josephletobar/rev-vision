@@ -1,32 +1,29 @@
 # RevVision
 
-rev-vision is an early-stage sports computer-vision toolkit designed to detect and analyze activity in specialized playing surfaces. The current focus is on **bowling lanes**, but the framework is adaptable to other sports where boundary, or ball tracking is important. It combines classical computer-vision and deep-learning techniques to segment surfaces, overlay results on video, and experiment with object detection.
+## Project Overview
+RevVision delivers human-centered sports analytics using Meta glasses for computer vision, currently focused on bowling. The system extracts information from a first-person wearable perspective to help users understand their performance. This work advances sports analytics from a human-centered, wearable-device viewpoint, with applications in accessibility, coaching, and AR-enhanced interaction. It also connects to broader research in computer vision and human-computer interaction.
 
-## Features
-- **Lane segmentation**: DeepLab-based model generates per-frame lane masks for bowling lanes (extendable to other sports surfaces).  
-- **Overlay visualization**: Draws the segmented lane or surface directly onto the original frame for easy viewing.  
-- **Lane extraction**: Produces a “cut-out” view containing only the playing surface for further analysis.  
-- **Experimental ball detection**: Prototype stage using Hough circle detection to highlight potential bowling balls.  
+## Key Features
+- **Input**: Processes video from Meta (Ray-Ban) smart glasses and delivers results shortly after each shot.
+- **Lane Segmentation**: Highlights the lane environment to isolate relevant playing surfaces.
+- **Ball Detection & Tracking**: Identifies the bowling ball and follows its motion through each shot.
+- **Output Metrics**: Produces insights such as ball trajectory, lane alignment, and shot visualizations.
 
-## Installation
-Clone the repository:  
-```bash
-git clone https://github.com/yourusername/rev-vision.git
-cd rev-vision
-```
+## Project Status and Future Work
+- **Implemented**: Lane segmentation pipeline and bowling ball tracking modules are operational.
+- **In Progress**: Data analysis pipeline that converts tracked data into structured metrics and reports.
+- **Planned**: Add shot accuracy scores and richer performance analytics per session, extend the framework to other sports or human-movement analysis tasks, and optimize processing for lower latency and more responsive feedback.
 
-Install dependencies:  
-```bash
-pip install -r requirements.txt
-```
+## Basic Usage Instructions
+1. **Setup**
+   ```bash
+   git clone https://github.com/yourusername/rev-vision.git
+   cd rev-vision
+   pip install -r requirements.txt
+   ```
+2. **Run**
+   Provide a recorded bowling session video (e.g., from `test_videos/`) to the main script:
+   ```bash
+   python main.py --video path/to/bowling_session.mp4
+   ```
 
-## Usage
-Run the main script with a video file:  
-```bash
-python main.py --video path/to/video.mp4
-```
-
-The tool will display a window with the surface overlay and another with the extracted region. Press `q` to quit.
-
-## Project Status
-rev-vision is still under active development. Bowling is the current testbed, but the architecture is built to expand into other sports vision use cases.
