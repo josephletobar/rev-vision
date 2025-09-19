@@ -6,7 +6,6 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 - **Input**: Processes video from Meta (Ray-Ban) smart glasses and delivers results shortly after each shot.
 - **Lane Segmentation**: Highlights the lane environment to isolate relevant playing surfaces.
 - **Ball Detection & Tracking**: Identifies the bowling ball and follows its motion through each shot.
-- **Output Metrics**: Produces insights such as ball trajectory, lane alignment, and shot visualizations.
 
 <p align="center">
   <img src="assets/output.gif" alt="Output Video" width="45%"/>
