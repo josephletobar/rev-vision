@@ -5,18 +5,18 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 ## Key Features
 - **Input**: Processes video from Meta (Ray-Ban) smart glasses and delivers results shortly after each shot.
 - **Lane Segmentation**: Highlights the lane environment to isolate relevant playing surfaces.
-- **Ball Detection & Tracking**: Identifies the bowling ball and follows its motion through each shot.
+- **Ball Detection & Tracking**: Identifies the ball and follows its motion through each shot.
 
 <p align="center">
   <img src="assets/output.gif" alt="Output Video" width="45%"/>
 </p>
 
 ## Project Status and Future Work
-- **Implemented**: Lane segmentation pipeline and bowling ball tracking modules are operational.
+- **Implemented**: Lane segmentation and ball tracking modules are operational.
 - **In Progress**: Data analysis pipeline that converts tracked data into structured metrics and reports.
-- **Planned**: Output metrics such as ball trajectory, lane alignment, and shot visualizations; shot accuracy scores and richer performance analytics per session; extension to other sports or human-movement analysis tasks; optimization for lower latency and more responsive feedback.
+- **Planned**: Output metrics such as ball trajectory, lane alignment, and shot visualizations; shot accuracy scores and richer performance metrics; extension to other sports or tasks; optimization for lower latency and more responsive feedback.
 
-## Basic Usage Instructions
+## How to Use
 1. **Setup**
    ```bash
    git clone https://github.com/yourusername/rev-vision.git
