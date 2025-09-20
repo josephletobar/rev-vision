@@ -46,13 +46,14 @@ try:
             warp = perspective.warp(frame, extraction) # get the birds eye view of the mask
             detect_ball(extraction, preview)
 
-        cv2.imshow("Lane Overlay", preview)
+        cv2.imshow("Lane Overlay", extraction)
         if out:
             out.write(preview)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break  # Exit on 'q' key
 
-        # cv2.imshow("Test", frame)
+        # # Test display
+        # cv2.imshow("Test", extraction)
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break  # Exit on 'q' key
 
