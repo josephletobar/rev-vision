@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 class BirdsEyeTransformer:
-    def __init__(self, out_size=(400, 1600)):
+    def __init__(self, out_size=(400, 900)):
         self.out_size = out_size
 
     def _get_mask_corners(self, mask: np.ndarray, debug: bool=False):
@@ -20,7 +20,7 @@ class BirdsEyeTransformer:
         if len(xs) == 0:
             return None
         
-        offset = int(0.05 * (ys.max() - ys.min())) # offset to go x% up/down into the mask to ignore curve
+        offset = int(0.01 * (ys.max() - ys.min())) # offset to go x% up/down into the mask to ignore curve
 
         # top row of the mask
         ytop = ys.min() + offset
@@ -51,20 +51,27 @@ class BirdsEyeTransformer:
 
         return TL, TR, BR, BL
 
-    def warp(self, frame, mask):
+    def warp(self, frame, mask, alpha=1):
+        """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
         corners = self._get_mask_corners(mask, debug=False)
         if corners is None:
             return None
 
         src = np.float32(corners)  # TL, TR, BR, BL
-
         Wout, Hout = self.out_size
-        dst = np.float32([[0,0],   # TL
-                  [Wout-1,0],      # TR
-                  [Wout-1,Hout-1], # BR
-                  [0,Hout-1]       # BL
-                 ])
+
+        dst = np.float32([
+            [0, 0],
+            [Wout - 1, 0],
+            [Wout - 1, Hout - 1],
+            [0, Hout - 1],
+        ])
+
+        mid_x = (dst[0, 0] + dst[1, 0]) / 2.0
+        dst[0, 0] = mid_x - alpha * (mid_x - dst[0, 0])
+        dst[1, 0] = mid_x + alpha * (dst[1, 0] - mid_x)
 
         M = cv2.getPerspectiveTransform(src, dst)
         return cv2.warpPerspective(frame, M, (Wout, Hout))
+
 

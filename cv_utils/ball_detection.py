@@ -35,6 +35,8 @@ def detect_ball(img, preview):
 
         ball_trail.append((x, y)) # update the trail
 
+    #TODO: Remove outliers from trail list and smooth points
+
     # draw trail (lines between consecutive points)
     for i in range(1, len(ball_trail)):
         cv2.line(preview, ball_trail[i-1], ball_trail[i], (0, 0, 255), 2)

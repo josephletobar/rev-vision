@@ -43,19 +43,23 @@ try:
 
         extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
         if extraction is not None:
-            warp = perspective.warp(frame, extraction) # get the birds eye view of the mask
-            detect_ball(extraction, preview)
+            detect_ball(extraction, preview) # detect extraction on the extraction
 
-        cv2.imshow("Lane Overlay", extraction)
+            warp = perspective.warp(frame, extraction, alpha=0.3) # get a perspective transform
+            # detect_ball(warp, warp) # detect ball on the warp
+
+
+
+        cv2.imshow("Lane Overlay", preview)
         if out:
             out.write(preview)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break  # Exit on 'q' key
 
-        # # Test display
-        # cv2.imshow("Test", extraction)
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break  # Exit on 'q' key
+        # Test display
+        cv2.imshow("Test", warp)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break  # Exit on 'q' key
 
 finally:
     cap.release()
