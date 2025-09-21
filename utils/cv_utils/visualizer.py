@@ -25,5 +25,5 @@ def smooth(xs, ys, s=200):
 
 # Testing   
 if __name__ == "__main__":
-    visual("points.csv")
+    visual("output/points.csv")
     visual("examples/points_run.csv")

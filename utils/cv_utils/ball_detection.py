@@ -46,7 +46,7 @@ if __name__ == "__main__":
     from trajectory import Trajectory
     filter = Trajectory(buffer_size=5, threshold=120)
 
-    OUTPUT_PATH = "points.csv"
+    OUTPUT_PATH = "output/points.csv"
     EXAMPLE_PATH = "examples/points_run.csv"
 
     # set CSV at the start of each run

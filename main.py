@@ -4,12 +4,12 @@ import cv2
 import csv
 import numpy as np
 import subprocess
-from ml_utils.deeplab_predict import deeplab_predict
-from cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
-from cv_utils.birds_eye_view import BirdsEyeTransformer
-from cv_utils.ball_detection import detect_ball
-from cv_utils.visualizer import visual
-from cv_utils.trajectory import Trajectory
+from utils.ml_utils.deeplab_predict import deeplab_predict
+from utils.cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
+from utils.cv_utils.birds_eye_view import BirdsEyeTransformer
+from utils.cv_utils.ball_detection import detect_ball
+from utils.cv_utils.visualizer import visual
+from utils.cv_utils.trajectory import Trajectory
 
 def main():
     overlay = OverlayProcessor()
@@ -18,7 +18,7 @@ def main():
     filter = Trajectory(buffer_size=5, threshold=120)
 
     # set CSV at the start of each run
-    TRACKING_OUTPUT = "points.csv"
+    TRACKING_OUTPUT = "outputs/points.csv"
     with open(TRACKING_OUTPUT, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["x", "y"])  # header
