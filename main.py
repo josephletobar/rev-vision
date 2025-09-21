@@ -1,7 +1,9 @@
 import argparse
 import matplotlib.pylab as plt
 import cv2
+import csv
 import numpy as np
+import subprocess
 from ml_utils.deeplab_predict import deeplab_predict
 from cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
 from cv_utils.birds_eye_view import BirdsEyeTransformer
@@ -10,6 +12,11 @@ from cv_utils.ball_detection import detect_ball
 overlay = OverlayProcessor()
 extract = ExtractProcessor()
 perspective = BirdsEyeTransformer()
+
+# set CSV at the start of each run
+with open("points.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(["x", "y"])  # header
 
 # Parse arguments
 parser = argparse.ArgumentParser(description="Lane Assist Video Processing")
@@ -46,9 +53,7 @@ try:
             detect_ball(extraction, preview) # detect extraction on the extraction
 
             warp = perspective.warp(frame, extraction, alpha=0.3) # get a perspective transform
-            # detect_ball(warp, warp) # detect ball on the warp
-
-
+            detect_ball(warp, warp, track=True) # detect ball on the warp
 
         cv2.imshow("Lane Overlay", preview)
         if out:
@@ -56,13 +61,18 @@ try:
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break  # Exit on 'q' key
 
-        # Test display
-        cv2.imshow("Test", warp)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break  # Exit on 'q' key
+        # # Testing
+        # detect_ball(frame, frame)
+        # cv2.imshow("Test", frame)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break  # Exit on 'q' key
 
 finally:
     cap.release()
     if out:
         out.release()
     cv2.destroyAllWindows()
+
+# launch plotting script in a new process
+subprocess.run(["python3", "visualizer.py"])
+

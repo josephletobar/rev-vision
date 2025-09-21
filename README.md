@@ -8,7 +8,7 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 - **Ball Detection & Tracking**: Identifies the ball and follows its motion through each shot.
 
 <p align="center">
-  <img src="assets/output.gif" alt="Output Video" width="45%"/>
+  <img src="examples/output.gif" alt="Output Video" width="45%"/>
 </p>
 
 ## Project Status and Future Work

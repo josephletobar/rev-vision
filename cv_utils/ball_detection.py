@@ -1,10 +1,8 @@
 import cv2
 import numpy as np
+import csv
 
-# global state
-ball_trail = [] # list of (x, y)
-
-def detect_ball(img, preview):
+def detect_ball(img, preview, track=False):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_blur = cv2.medianBlur(img_gray, 5)
 
@@ -31,13 +29,11 @@ def detect_ball(img, preview):
         x, y = int(best_kp.pt[0]), int(best_kp.pt[1])
         r = int(best_kp.size / 2)
         cv2.circle(preview, (x, y), r, (255, 0, 0), 2) # Draw blue outer circle
-        cv2.circle(preview, (x, y), 3, (0, 0, 255), -1) # Draw red inner dot
 
-        ball_trail.append((x, y)) # update the trail
-
-    #TODO: Remove outliers from trail list and smooth points
-
-    # draw trail (lines between consecutive points)
-    for i in range(1, len(ball_trail)):
-        cv2.line(preview, ball_trail[i-1], ball_trail[i], (0, 0, 255), 2)
+        if track:
+            cv2.circle(preview, (x, y), 3, (0, 0, 255), -1) # Draw red inner dot
+            # Write points to csv
+            with open("points.csv", "a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([x, y])
 
