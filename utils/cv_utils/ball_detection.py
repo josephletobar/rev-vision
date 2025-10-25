@@ -29,13 +29,14 @@ def detect_ball(img, preview, track=False, OUTPUT_PATH=None, trajectory_filter=N
     if best_kp is not None:
         x, y = int(best_kp.pt[0]), int(best_kp.pt[1])
         r = int(best_kp.size / 2)
-        cv2.circle(preview, (x, y), r, (255, 0, 0), 2) # Draw blue outer circle
+        cv2.circle(preview, (x, y), r, (255, 0, 0), 2) # draw blue outer circle
 
+        # track points
         if track:
-            cv2.circle(preview, (x, y), 3, (0, 0, 255), -1) # Draw red inner dot
+            cv2.circle(preview, (x, y), 3, (0, 0, 255), -1) # draw red inner dot
             out = trajectory_filter.update((x, y)) # filter the dot
 
-            # If its a valid point, save it to the file
+            # if its a valid point, save it to the file
             if out is not None:
                 with open(OUTPUT_PATH, "a", newline="") as f:
                     writer = csv.writer(f)
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     from trajectory import Trajectory
     filter = Trajectory(buffer_size=5, threshold=120)
 
-    OUTPUT_PATH = "output/points.csv"
+    OUTPUT_PATH = "outputs/points.csv"
     EXAMPLE_PATH = "examples/points_run.csv"
 
     # set CSV at the start of each run
@@ -72,5 +73,5 @@ if __name__ == "__main__":
                     writer = csv.writer(f)
                     writer.writerow([x, y])
 
-    from visualizer import visual
+    from utils.cv_utils.lane_visual import visual
     visual(OUTPUT_PATH)

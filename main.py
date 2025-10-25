@@ -8,7 +8,7 @@ from utils.ml_utils.deeplab_predict import deeplab_predict
 from utils.cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
 from utils.cv_utils.birds_eye_view import BirdsEyeTransformer
 from utils.cv_utils.ball_detection import detect_ball
-from utils.cv_utils.visualizer import visual
+from utils.cv_utils.lane_visual import visual
 from utils.cv_utils.trajectory import Trajectory
 
 def main():
