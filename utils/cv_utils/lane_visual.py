@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from draw_lane import draw_lane, LANE_L_IN, LANE_W_IN
+from .draw_lane import draw_lane, LANE_L_IN, LANE_W_IN
 import cv2
 from scipy.interpolate import splprep, splev
 

@@ -30,7 +30,7 @@ def main():
     args = parser.parse_args()
 
     # Load weights
-    weights = "ml_utils/weights/lane_deeplab_model_2.pth"
+    weights = "utils/ml_utils/weights/lane_deeplab_model_2.pth"
 
     # For video processing
     cap = cv2.VideoCapture(args.video)

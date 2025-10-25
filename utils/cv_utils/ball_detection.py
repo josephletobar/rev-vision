@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import csv
 
-def detect_ball(img, preview, track=False, OUTPUT_PATH=None, trajectory_filter=None):
+def detect_ball(img, preview, track=False, output_path=None, trajectory_filter=None):
 
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_blur = cv2.medianBlur(img_gray, 5)
@@ -38,7 +38,7 @@ def detect_ball(img, preview, track=False, OUTPUT_PATH=None, trajectory_filter=N
 
             # if its a valid point, save it to the file
             if out is not None:
-                with open(OUTPUT_PATH, "a", newline="") as f:
+                with open(output_path, "a", newline="") as f:
                     writer = csv.writer(f)
                     writer.writerow([x, y])
 

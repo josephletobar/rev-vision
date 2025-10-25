@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from ml_utils.deeplab_predict import deeplab_predict
 
 # Validate and normalize mask for further processing
 class BaseMaskProcessor:

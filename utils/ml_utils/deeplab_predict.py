@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
-from ml_utils.deeplab_model import get_deeplab_model 
+from .deeplab_model import get_deeplab_model 
 
 # Load model 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
