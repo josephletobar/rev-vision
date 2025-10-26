@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
+from utils.utils import LANE_W, LANE_H
 
 class BirdsEyeTransformer:
-    def __init__(self, out_size=(400, 900)):
+    def __init__(self, out_size=(LANE_W, LANE_H)):
         self.out_size = out_size
 
     def _get_mask_corners(self, mask: np.ndarray, debug: bool=False):

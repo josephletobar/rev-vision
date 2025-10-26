@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 from .draw_lane import draw_lane, LANE_L_IN, LANE_W_IN
 import cv2
 from scipy.interpolate import splprep, splev
-
-H, W = 800, 200
+from utils.utils import LANE_W, LANE_H
 
 def visual(file_path):
 
@@ -12,7 +11,6 @@ def visual(file_path):
     pts = np.genfromtxt(file_path, delimiter=",", names=True)
     xs, ys = pts["x"], pts["y"]
     xs, ys = remove_outliers(xs, ys)
-    # xs, ys = smooth_line(xs, ys)
 
     # make a scatter/line plot
     plt.figure(figsize=(4, 7.5))
@@ -25,6 +23,7 @@ def visual(file_path):
     L, R, T, B = lane_bounds
     xs, ys = lane_mask(xs, ys, L, R, T, B)
 
+    # smooth lines
     xs, ys = smooth_line(xs, ys)
 
     # draw points/line
@@ -89,13 +88,11 @@ def remove_outliers(xs, ys, radius=30, threshold=5):
 
 
 
-def smooth_line(xs, ys, THICKNESS=80, S=8000, H=1000, W=200):
+def smooth_line(xs, ys, THICKNESS=80, S=1000, H=LANE_H, W=LANE_W):
     canvas = np.zeros((H, W), dtype=np.uint8)
 
-    # normalize xs/ys into canvas scale
-    xs_i = np.interp(xs, (xs.min(), xs.max()), (0, W - 1))
-    ys_i = np.interp(ys, (ys.min(), ys.max()), (0, H - 1))
-    pts = np.column_stack((xs_i.astype(int), ys_i.astype(int)))
+    # Assume xs, ys are already in lane coordinate space
+    pts = np.column_stack((xs.astype(int), ys.astype(int)))
 
     # draw the thick line
     cv2.polylines(canvas, [pts], isClosed=False, color=255, thickness=THICKNESS)
@@ -115,24 +112,19 @@ def smooth_line(xs, ys, THICKNESS=80, S=8000, H=1000, W=200):
     tck, _ = splprep([xs_center, ys_center], s=S)
     xs_center, ys_center = splev(np.linspace(0, 1, len(xs_center)), tck)
 
-    # # --- optional visualization ---
-    # cv2.polylines(canvas, [np.column_stack((xs_center.astype(int), ys_center.astype(int)))],
-    #               isClosed=False, color=180, thickness=3)
-    # cv2.imshow("Centerline", canvas)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    # --- optional visualization ---
+    cv2.polylines(canvas, [np.column_stack((xs_center.astype(int), ys_center.astype(int)))],
+                  isClosed=False, color=180, thickness=3)
+    cv2.imshow("Centerline", canvas)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-    # map back to original coordinate system
-    xs_out = np.interp(xs_center, (0, W - 1), (xs.min(), xs.max()))
-    ys_out = np.interp(ys_center, (0, H - 1), (ys.min(), ys.max()))
-
-    return xs_out, ys_out
-
+    return xs_center, ys_center
 
 
 # Test on existing points   
 if __name__ == "__main__":
+    visual("examples/points_run2.csv")
     # visual("output/points.csv")
-    visual("examples/points_run.csv")
 
     

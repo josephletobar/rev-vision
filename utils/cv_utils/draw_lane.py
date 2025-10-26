@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Polygon, Circle
 import numpy as np
 from typing import Tuple
+from utils.utils import LANE_W, LANE_H
 
 # Lane measurement constants (inches)
 LANE_W_IN   = 41.5            # between gutters
@@ -12,19 +13,17 @@ ARROW_BOARDS = [5,10,15,20,25,30,35]
 PIN_DECK_IN = 24              # 2 ft extension beyond the lane
 GUTTER_W_IN = 9.25            # standard gutter width
 
-def draw_lane(ax, xs, ys, lane_width_px=200, lane_height_px=800) -> Tuple[float, float, float, float]:
+# TODO: Fix lane plotting so partial trajectories don't get stretched upward; preserve true point scaling instead of auto-fitting.
+
+def draw_lane(ax, xs, ys, lane_width_px=LANE_W, lane_height_px=LANE_H) -> Tuple[float, float, float, float]:
 
     """Draw a to-scale lane.
     Returns:
         (lane_left, lane_right, lane_top, lane_bottom): tuple of floats in pixel coordinates.
     """
 
-    # --- data-driven box (centered on mean x, aligned to min y) ---
-    x_center = np.mean(xs)
-    lane_left = x_center - lane_width_px/2
-    lane_right = x_center + lane_width_px/2
-    lane_top = np.min(ys) 
-    lane_bottom = lane_top + lane_height_px
+    lane_left, lane_top = 0, 0
+    lane_right, lane_bottom = lane_width_px, lane_height_px
 
     # draw lane background (beige)
     ax.add_patch(Rectangle((lane_left, lane_top),

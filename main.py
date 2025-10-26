@@ -57,8 +57,13 @@ def main():
             if extraction is not None:
                 detect_ball(extraction, preview) # detect extraction on the extraction
 
-                warp = perspective.warp(frame, extraction, alpha=0.3) # get a perspective transform
-                detect_ball(warp, warp, track=True, output_path=TRACKING_OUTPUT, trajectory_filter=filter) # detect ball on the warp, track this one
+                try: 
+                    warp = perspective.warp(frame, extraction, alpha=0.3) # get a perspective transform
+                    H, W = warp.shape[:2]  # Height and width in pixels
+                    detect_ball(warp, warp, track=True, output_path=TRACKING_OUTPUT, trajectory_filter=filter) # detect ball on the warp, track this one
+                except ValueError:
+                    # print("Skipping frame: no valid lane mask")
+                    continue
 
             cv2.imshow("Lane Overlay", preview)
             if out:
@@ -66,11 +71,11 @@ def main():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break  # Exit on 'q' key
 
-            # # TESTING
-            # detect_ball(frame, frame)
-            # cv2.imshow("Test", frame)
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #     break  # Exit on 'q' key
+            # TESTING
+            detect_ball(warp, warp)
+            cv2.imshow("Test", warp)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break  # Exit on 'q' key
 
     finally:
         cap.release()
@@ -81,5 +86,6 @@ def main():
     # Run plotting script
     visual(TRACKING_OUTPUT)
 
+# python3 main.py --video test_videos/bowling3.mp4
 if __name__ == "__main__":
     main()

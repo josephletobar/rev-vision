@@ -44,7 +44,7 @@ def detect_ball(img, preview, track=False, output_path=None, trajectory_filter=N
 
 # TESTING   
 if __name__ == "__main__":
-    from trajectory import Trajectory
+    from .trajectory import Trajectory
     filter = Trajectory(buffer_size=5, threshold=120)
 
     OUTPUT_PATH = "outputs/points.csv"
