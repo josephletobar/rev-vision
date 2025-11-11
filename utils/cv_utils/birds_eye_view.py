@@ -16,6 +16,16 @@ class BirdsEyeTransformer:
         return mask, ys, xs
     
     def _average_lines(self, lines, frame_size):
+        """
+        Compute an averaged line and its angle from a set of detected lines.
+
+        Args:
+            lines (list or np.ndarray): Collection of lines in the form (x1, y1, x2, y2).
+            frame_height (int): Height of the image frame, used to anchor the averaged line.
+
+        Returns:
+            tuple: ((x1, y1, x2, y2), angle_radians) or (None, None) if no valid lines.
+        """
         slopes = []
         intercepts = []
         for x1, y1, x2, y2 in lines:
@@ -37,9 +47,22 @@ class BirdsEyeTransformer:
         x1 = int((y1 - avg_intercept) / avg_slope)
         x2 = int((y2 - avg_intercept) / avg_slope)
 
-        return (x1, y1, x2, y2)
+        angle = np.arctan2(x2 - x1, y2 - y1) # compute the resulting lines angle
+
+        return (x1, y1, x2, y2), angle
 
     def _stabilize_rotation(self, mask: np.ndarray, vis_debug=None):
+        """
+        Stabilize the lane mask by detecting its outer lane lines,
+        estimating the average tilt angle, and rotating the mask to align it vertically.
+
+        Args:
+            mask (np.ndarray): Binary or grayscale lane mask.
+            vis_debug (np.ndarray, optional): Optional image for visualization.
+
+        Returns:
+            np.ndarray: Rotated (stabilized) mask, or None if no valid lines are found.
+        """
 
         mask, ys, xs = self._prepare_mask(mask)
         if len(xs) == 0:
@@ -58,56 +81,76 @@ class BirdsEyeTransformer:
         if lines is None:
             return None
 
-        try: 
-            cx = int(xs.mean())
-            cy = int(ys.mean())
-            mask_center = (cx, cy)
+        cx = int(xs.mean())
+        cy = int(ys.mean())
+        mask_center = (cx, cy)
 
-            left_lines = []
-            right_lines = []
+        left_lines = []
+        right_lines = []
 
-            # detect a right / left line
-            for x1, y1, x2, y2 in lines[:, 0]:
-                if x2 == x1:  # avoid vertical lines
-                    continue
-                slope = (y2 - y1) / (x2 - x1)
-                
-                if abs(slope) < 0.6:
-                    continue  # skip horizontal or almost flat lines
+        # detect a right / left line
+        for x1, y1, x2, y2 in lines[:, 0]:
+            if x2 == x1:  # avoid vertical lines
+                continue
+            slope = (y2 - y1) / (x2 - x1)
+            
+            if abs(slope) < 0.6:
+                continue  # skip horizontal or almost flat lines
 
-                if slope > 0:  
-                    right_lines.append((x1, y1, x2, y2))
-                else:
-                    left_lines.append((x1, y1, x2, y2))
-                
-            # draw averaged lines
-            avg_right = self._average_lines(right_lines, mask.shape[0])
-            avg_left = self._average_lines(left_lines, mask.shape[0])
+            if slope > 0:  
+                right_lines.append((x1, y1, x2, y2))
+            else:
+                left_lines.append((x1, y1, x2, y2))
+            
+        # get averaged lines
+        avg_right, right_angle = self._average_lines(right_lines, mask.shape[0])
+        avg_left, left_angle = self._average_lines(left_lines, mask.shape[0])
 
-            if vis_debug is not None:
-                cv2.circle(vis_debug, mask_center, 10, (255,0,0), 10)
+        avg_angle = (left_angle + right_angle) / 2 # tells how much the whole lane has tilted
 
-                # all detected left lines
-                if len(left_lines) > 0:
-                    for x1, y1, x2, y2 in left_lines:
-                        cv2.line(vis_debug, (x1, y1), (x2, y2), (255, 0, 0), 10)
-                # averaged left line
-                if avg_left is not None:
-                    cv2.line(vis_debug, avg_left[:2], avg_left[2:], (180, 180, 180), 4) 
+        print(mask.shape)
 
-                # all detected right lines
-                if len(right_lines) > 0:
-                    for x1, y1, x2, y2 in right_lines:
-                        cv2.line(vis_debug, (x1, y1), (x2, y2), (0, 0, 255), 10)
-                # averaged right line
-                if avg_right is not None:
-                   cv2.line(vis_debug, avg_right[:2], avg_right[2:], (180, 180, 180), 4) 
+        h, w = mask.shape[:2]
+        center = (w // 2, h // 2)
+        rotation_gain = 1.35 # gain constant for rotation
+        stabilized = cv2.warpAffine(mask,
+            cv2.getRotationMatrix2D(center, -np.degrees(avg_angle) * rotation_gain, 1.0),
+            (w, h)
+        )
 
+        if vis_debug is not None:
+            print("LANE TILT AMOUNT: ", avg_angle)
+            cv2.circle(vis_debug, mask_center, 10, (255,0,0), 10)
+            # all detected left lines
+            if len(left_lines) > 0:
+                for x1, y1, x2, y2 in left_lines:
+                    cv2.line(vis_debug, (x1, y1), (x2, y2), (255, 0, 0), 10)
+            # averaged left line
+            if avg_left is not None:
+                cv2.line(vis_debug, avg_left[:2], avg_left[2:], (180, 180, 180), 4) 
+            # all detected right lines
+            if len(right_lines) > 0:
+                for x1, y1, x2, y2 in right_lines:
+                    cv2.line(vis_debug, (x1, y1), (x2, y2), (0, 0, 255), 10)
+            # averaged right line
+            if avg_right is not None:
+                cv2.line(vis_debug, avg_right[:2], avg_right[2:], (180, 180, 180), 4) 
+            # cv2.imshow("Stabalizing Debug ", vis_debug) # optionally show it seperately
 
-        except Exception as e:
-            print(e)
+        return stabilized
 
     def _get_mask_corners(self, mask: np.ndarray, vis_debug=None):
+        """
+        Extract the four approximate corner points (TL, TR, BR, BL)
+        from a binary lane mask for perspective transformation.
+
+        Args:
+            mask (np.ndarray): Binary or grayscale mask where lane pixels > 0.
+            vis_debug (np.ndarray, optional): Optional visualization image.
+
+        Returns:
+            tuple: (TL, TR, BR, BL) as (x, y) integer tuples, or None if mask is empty.
+        """
 
         mask, ys, xs = self._prepare_mask(mask)
         if len(xs) == 0:
@@ -142,6 +185,7 @@ class BirdsEyeTransformer:
             cv2.circle(vis_debug, BL, 17, (255,0,0), -1) # Blue
             cv2.circle(vis_debug, BR, 17, (0,255,255), -1) # Yellow
             cv2.line(vis_debug, BL, BR, (255, 0, 0), 3) # Connect the bottom
+        # cv2.imshow("Corners Debug ", vis_debug) # optionally show it seperately
 
 
         return TL, TR, BR, BL
@@ -149,13 +193,13 @@ class BirdsEyeTransformer:
     def warp(self, frame, mask, alpha=1):
         """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
 
-        DEBUG = True # set True / False as needed
+        DEBUG = False # set True / False as needed
         if DEBUG:
             vis_debug = mask.copy()
 
         stabilized = self._stabilize_rotation(mask, vis_debug if DEBUG else None)
 
-        corners = self._get_mask_corners(mask, vis_debug if DEBUG else None)
+        corners = self._get_mask_corners(stabilized, vis_debug if DEBUG else None)
         if corners is None:
             return None
 
@@ -175,9 +219,13 @@ class BirdsEyeTransformer:
 
         M = cv2.getPerspectiveTransform(src, dst)
 
-        if DEBUG:
-            cv2.imshow("Debug Visual", vis_debug)
+        # make sure stabalized is BGR (warpPerspective needs it)
+        if len(stabilized.shape) == 2:
+            stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
 
-        return cv2.warpPerspective(frame, M, (Wout, Hout))
+        if DEBUG:
+            cv2.imshow("Debug Visual", stabilized)
+
+        return cv2.warpPerspective(stabilized, M, (Wout, Hout))
 
 
