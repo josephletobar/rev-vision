@@ -34,13 +34,15 @@ def detect_ball(img, preview, track=False, output_path=None, trajectory_filter=N
         # track points
         if track:
             cv2.circle(preview, (x, y), 3, (0, 0, 255), -1) # draw red inner dot
-            out = trajectory_filter.update((x, y)) # filter the dot
 
-            # if its a valid point, save it to the file
-            if out is not None:
-                with open(output_path, "a", newline="") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([x, y])
+            # out = trajectory_filter.update((x, y)) # filter the dot
+
+            # # if its a valid point, save it to the file
+            # if out is not None:
+            
+            with open(output_path, "a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([x, y])
 
 # TESTING   
 if __name__ == "__main__":

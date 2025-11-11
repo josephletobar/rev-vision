@@ -72,10 +72,13 @@ def main():
                 break  # Exit on 'q' key
 
             # TESTING
-            detect_ball(warp, warp)
-            cv2.imshow("Test", warp)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break  # Exit on 'q' key
+            try:
+                detect_ball(warp, warp)
+                cv2.imshow("Test", warp)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break  # Exit on 'q' key
+            except Exception as e:
+                print(e)
 
     finally:
         cap.release()
@@ -86,6 +89,6 @@ def main():
     # Run plotting script
     visual(TRACKING_OUTPUT)
 
-# python3 main.py --video test_videos/bowling3.mp4
+# python3 main.py --video test_videos/bowling.mp4
 if __name__ == "__main__":
     main()

@@ -24,7 +24,7 @@ def visual(file_path):
     xs, ys = lane_mask(xs, ys, L, R, T, B)
 
     # smooth lines
-    xs, ys = smooth_line(xs, ys)
+    # xs, ys = smooth_line(xs, ys)
 
     # draw points/line
     plt.plot(xs, ys, 'k-', lw=3)   
@@ -109,22 +109,25 @@ def smooth_line(xs, ys, THICKNESS=80, S=1000, H=LANE_H, W=LANE_W):
     ys_center = np.array(ys_center)
 
     # spline smooth
-    tck, _ = splprep([xs_center, ys_center], s=S)
-    xs_center, ys_center = splev(np.linspace(0, 1, len(xs_center)), tck)
+    try:
+        tck, _ = splprep([xs_center, ys_center], s=S)
+        xs_center, ys_center = splev(np.linspace(0, 1, len(xs_center)), tck)
+    except:
+        pass
 
-    # --- optional visualization ---
-    cv2.polylines(canvas, [np.column_stack((xs_center.astype(int), ys_center.astype(int)))],
-                  isClosed=False, color=180, thickness=3)
-    cv2.imshow("Centerline", canvas)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # # --- optional visualization ---
+    # cv2.polylines(canvas, [np.column_stack((xs_center.astype(int), ys_center.astype(int)))],
+    #               isClosed=False, color=180, thickness=3)
+    # cv2.imshow("Centerline", canvas)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     return xs_center, ys_center
 
 
 # Test on existing points   
 if __name__ == "__main__":
-    visual("examples/points_run2.csv")
-    # visual("output/points.csv")
+    visual("examples/points_run.csv")
+    # visual("outputs/points.csv")
 
     
