@@ -66,8 +66,8 @@ def main():
                     continue
 
             cv2.imshow("Lane Overlay", preview)
-            if out:
-                out.write(preview)
+            # if out:
+            #     out.write(preview)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break  # Exit on 'q' key
 
@@ -75,6 +75,8 @@ def main():
             try:
                 detect_ball(warp, warp)
                 cv2.imshow("Test", warp)
+                if out:
+                  out.write(warp)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break  # Exit on 'q' key
             except Exception as e:

@@ -202,7 +202,7 @@ class BirdsEyeTransformer:
     def warp(self, frame, mask, alpha=1):
         """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
 
-        DEBUG = False # set True / False as needed
+        DEBUG = True # set True / False as needed
         if DEBUG:
             vis_debug = mask.copy()
 
@@ -234,6 +234,22 @@ class BirdsEyeTransformer:
 
         if DEBUG:
             cv2.imshow("Debug Visual", vis_debug)
+            cv2.waitKey(1)
+
+            # Lazy init: only create the writer once
+            if not hasattr(self, "_writer"):
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                h, w = vis_debug.shape[:2]
+                self._writer = cv2.VideoWriter("debug_visual.mp4", fourcc, 30.0, (w, h))
+
+            # Write current debug frame
+            self._writer.write(vis_debug)
+
+            # If ESC is pressed, release writer and close
+            if cv2.waitKey(1) == 27:
+                self._writer.release()
+                del self._writer
+                cv2.destroyWindow("Debug Visual")
 
         return cv2.warpPerspective(stabilized, M, (Wout, Hout))
 
