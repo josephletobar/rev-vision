@@ -100,5 +100,5 @@ if __name__ == "__main__":
                     writer = csv.writer(f)
                     writer.writerow([x, y])
 
-    from utils.cv_utils.lane_visual import visual
+    from archive.lane_visual import visual
     visual(OUTPUT_PATH)

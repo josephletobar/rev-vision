@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from utils.utils import LANE_W, LANE_H
+from utils.config import LANE_W, LANE_H
 
 class BirdsEyeTransformer:
     def __init__(self, out_size=(LANE_W, LANE_H)):
@@ -206,7 +206,7 @@ class BirdsEyeTransformer:
     def warp(self, frame, mask, alpha=1):
         """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
 
-        DEBUG = True # set True / False as needed
+        DEBUG = False # set True / False as needed
         if DEBUG:
             vis_debug = mask.copy()
 

@@ -61,7 +61,8 @@ def main():
 
                 try: 
                     warp = perspective.warp(frame, extraction, alpha=0.3) # get a perspective transform
-                    H, W = warp.shape[:2]  # Height and width in pixels
+                    # H, W = warp.shape[:2]  # Height and width in pixels
+                    # print((H, W))
                     detect_ball(warp, warp, track=True, output_path=TRACKING_OUTPUT, trajectory_filter=filter) # detect ball on the warp, track this one
                 except Exception:
                     # print("Skipping frame: no valid lane mask")
