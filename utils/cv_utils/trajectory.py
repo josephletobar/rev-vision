@@ -7,6 +7,9 @@ class Trajectory:
         self.seeding_buffer = []
         self.accepted = []
 
+    def tracker(self, new_point):
+        self.accepted.append(new_point)
+
     def update(self, new_point):
         # Use the first x mean for initial acceptance point 
         if len(self.seeding_buffer) == self.buffer_size: 

@@ -24,7 +24,7 @@ def visual(file_path):
     xs, ys = lane_mask(xs, ys, L, R, T, B)
 
     # smooth lines
-    # xs, ys = smooth_line(xs, ys)
+    xs, ys = smooth_line(xs, ys)
 
     # draw points/line
     plt.plot(xs, ys, 'k-', lw=3)   
@@ -126,8 +126,9 @@ def smooth_line(xs, ys, THICKNESS=80, S=1000, H=LANE_H, W=LANE_W):
 
 
 # Test on existing points   
+# python3 -m utils.cv_utils.lane_visual
 if __name__ == "__main__":
-    visual("examples/points_run.csv")
-    # visual("outputs/points.csv")
+    # visual("examples/points_run.csv")
+    visual("outputs/points.csv")
 
     

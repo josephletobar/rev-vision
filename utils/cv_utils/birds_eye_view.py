@@ -108,8 +108,6 @@ class BirdsEyeTransformer:
 
         avg_angle = (left_angle + right_angle) / 2 # tells how much the whole lane has tilted
 
-        print(mask.shape)
-
         h, w = mask.shape[:2]
         center = (w // 2, h // 2)
         rotation_gain = 1.35 # gain constant for rotation
@@ -158,17 +156,28 @@ class BirdsEyeTransformer:
         
         offset = int(0.05 * (ys.max() - ys.min())) # offset to go x% up/down into the mask to ignore curve
 
-        # top row of the mask
+        # grab top row of the mask
         ytop = ys.min() + offset
         xs_top = xs[ys == ytop]
         TL = (xs_top.min(), ytop)
         TR = (xs_top.max(), ytop)
 
-        # bottom row of the mask
+        # grab bottom row of the mask
         ybot = ys.max() - offset*5
         xs_bot = xs[ys == ybot]
         BL = (xs_bot.min(), ybot)
         BR = (xs_bot.max(), ybot)
+
+        # shift the cropped region upward slightly to simulate full lane depth
+        ytop -= offset 
+        ybot += offset * 4
+        TL = (xs_top.min(), ytop)
+        TR = (xs_top.max(), ytop)
+        mid_x = (xs_bot.min() + xs_bot.max()) // 2
+        scale = 1.2  # widen by 20%
+        half_width = (xs_bot.max() - xs_bot.min()) * scale / 2
+        BL = (int(mid_x - half_width), ybot)
+        BR = (int(mid_x + half_width), ybot)
 
         # shows the found corner points
         if vis_debug is not None:
@@ -224,7 +233,7 @@ class BirdsEyeTransformer:
             stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
 
         if DEBUG:
-            cv2.imshow("Debug Visual", stabilized)
+            cv2.imshow("Debug Visual", vis_debug)
 
         return cv2.warpPerspective(stabilized, M, (Wout, Hout))
 

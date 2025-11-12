@@ -79,6 +79,9 @@ def main():
                     break  # Exit on 'q' key
             except Exception as e:
                 print(e)
+    
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt detected. Cleaning up gracefully...")
 
     finally:
         cap.release()
@@ -86,8 +89,8 @@ def main():
             out.release()
         cv2.destroyAllWindows()
 
-    # Run plotting script
-    visual(TRACKING_OUTPUT)
+        # Run plotting script
+        visual(TRACKING_OUTPUT)
 
 # python3 main.py --video test_videos/bowling.mp4
 if __name__ == "__main__":
