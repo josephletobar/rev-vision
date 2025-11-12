@@ -47,7 +47,8 @@ def main():
         while(cap.isOpened()):
             ret, frame = cap.read()
             if not ret:
-                break  # Exit if frame wasn't read
+                print("Frame read failed — skipping")
+                continue    
             
             # Run model on current frame to get its prediction mask
             _, pred_mask = deeplab_predict(frame, weights) 
@@ -61,7 +62,7 @@ def main():
                     warp = perspective.warp(frame, extraction, alpha=0.3) # get a perspective transform
                     H, W = warp.shape[:2]  # Height and width in pixels
                     detect_ball(warp, warp, track=True, output_path=TRACKING_OUTPUT, trajectory_filter=filter) # detect ball on the warp, track this one
-                except ValueError:
+                except Exception:
                     # print("Skipping frame: no valid lane mask")
                     continue
 
@@ -82,8 +83,8 @@ def main():
             except Exception as e:
                 print(e)
     
-    except KeyboardInterrupt:
-        print("\nKeyboard interrupt detected. Cleaning up gracefully...")
+    # except KeyboardInterrupt:
+    #     print("\nKeyboard interrupt detected. Cleaning up gracefully...")
 
     finally:
         cap.release()
@@ -91,8 +92,8 @@ def main():
             out.release()
         cv2.destroyAllWindows()
 
-        # Run plotting script
-        visual(TRACKING_OUTPUT)
+    # Run plotting script
+    visual(TRACKING_OUTPUT)
 
 # python3 main.py --video test_videos/bowling.mp4
 if __name__ == "__main__":

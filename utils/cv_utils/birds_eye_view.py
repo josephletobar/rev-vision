@@ -103,39 +103,43 @@ class BirdsEyeTransformer:
                 left_lines.append((x1, y1, x2, y2))
             
         # get averaged lines
-        avg_right, right_angle = self._average_lines(right_lines, mask.shape[0])
-        avg_left, left_angle = self._average_lines(left_lines, mask.shape[0])
 
-        avg_angle = (left_angle + right_angle) / 2 # tells how much the whole lane has tilted
+        try:
+            avg_right, right_angle = self._average_lines(right_lines, mask.shape[0])
+            avg_left, left_angle = self._average_lines(left_lines, mask.shape[0])
 
-        h, w = mask.shape[:2]
-        center = (w // 2, h // 2)
-        rotation_gain = 1.35 # gain constant for rotation
-        stabilized = cv2.warpAffine(mask,
-            cv2.getRotationMatrix2D(center, -np.degrees(avg_angle) * rotation_gain, 1.0),
-            (w, h)
-        )
+            avg_angle = (left_angle + right_angle) / 2 # tells how much the whole lane has tilted
 
-        if vis_debug is not None:
-            print("LANE TILT AMOUNT: ", avg_angle)
-            cv2.circle(vis_debug, mask_center, 10, (255,0,0), 10)
-            # all detected left lines
-            if len(left_lines) > 0:
-                for x1, y1, x2, y2 in left_lines:
-                    cv2.line(vis_debug, (x1, y1), (x2, y2), (255, 0, 0), 10)
-            # averaged left line
-            if avg_left is not None:
-                cv2.line(vis_debug, avg_left[:2], avg_left[2:], (180, 180, 180), 4) 
-            # all detected right lines
-            if len(right_lines) > 0:
-                for x1, y1, x2, y2 in right_lines:
-                    cv2.line(vis_debug, (x1, y1), (x2, y2), (0, 0, 255), 10)
-            # averaged right line
-            if avg_right is not None:
-                cv2.line(vis_debug, avg_right[:2], avg_right[2:], (180, 180, 180), 4) 
-            # cv2.imshow("Stabalizing Debug ", vis_debug) # optionally show it seperately
+            h, w = mask.shape[:2]
+            center = (w // 2, h // 2)
+            rotation_gain = 1.35 # gain constant for rotation
+            stabilized = cv2.warpAffine(mask,
+                cv2.getRotationMatrix2D(center, np.degrees(avg_angle) * rotation_gain, 1.0),
+                (w, h)
+            )
 
-        return stabilized
+            if vis_debug is not None:
+                print("LANE TILT AMOUNT: ", avg_angle)
+                cv2.circle(vis_debug, mask_center, 10, (255,0,0), 10)
+                # all detected left lines
+                if len(left_lines) > 0:
+                    for x1, y1, x2, y2 in left_lines:
+                        cv2.line(vis_debug, (x1, y1), (x2, y2), (255, 0, 0), 10)
+                # averaged left line
+                if avg_left is not None:
+                    cv2.line(vis_debug, avg_left[:2], avg_left[2:], (180, 180, 180), 4) 
+                # all detected right lines
+                if len(right_lines) > 0:
+                    for x1, y1, x2, y2 in right_lines:
+                        cv2.line(vis_debug, (x1, y1), (x2, y2), (0, 0, 255), 10)
+                # averaged right line
+                if avg_right is not None:
+                    cv2.line(vis_debug, avg_right[:2], avg_right[2:], (180, 180, 180), 4) 
+                # cv2.imshow("Stabalizing Debug ", vis_debug) # optionally show it seperately
+
+            return stabilized
+        except Exception as e:
+            print(e)
 
     def _get_mask_corners(self, mask: np.ndarray, vis_debug=None):
         """
@@ -206,51 +210,55 @@ class BirdsEyeTransformer:
         if DEBUG:
             vis_debug = mask.copy()
 
-        stabilized = self._stabilize_rotation(mask, vis_debug if DEBUG else None)
+        try:
 
-        corners = self._get_mask_corners(stabilized, vis_debug if DEBUG else None)
-        if corners is None:
-            return None
+            stabilized = self._stabilize_rotation(mask, vis_debug if DEBUG else None)
 
-        src = np.float32(corners)  # TL, TR, BR, BL
-        Wout, Hout = self.out_size
+            corners = self._get_mask_corners(stabilized, vis_debug if DEBUG else None)
+            if corners is None:
+                return None
 
-        dst = np.float32([
-            [0, 0],
-            [Wout - 1, 0],
-            [Wout - 1, Hout - 1],
-            [0, Hout - 1],
-        ])
+            src = np.float32(corners)  # TL, TR, BR, BL
+            Wout, Hout = self.out_size
 
-        mid_x = (dst[0, 0] + dst[1, 0]) / 2.0
-        dst[0, 0] = mid_x - alpha * (mid_x - dst[0, 0])
-        dst[1, 0] = mid_x + alpha * (dst[1, 0] - mid_x)
+            dst = np.float32([
+                [0, 0],
+                [Wout - 1, 0],
+                [Wout - 1, Hout - 1],
+                [0, Hout - 1],
+            ])
 
-        M = cv2.getPerspectiveTransform(src, dst)
+            mid_x = (dst[0, 0] + dst[1, 0]) / 2.0
+            dst[0, 0] = mid_x - alpha * (mid_x - dst[0, 0])
+            dst[1, 0] = mid_x + alpha * (dst[1, 0] - mid_x)
 
-        # make sure stabalized is BGR (warpPerspective needs it)
-        if len(stabilized.shape) == 2:
-            stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
+            M = cv2.getPerspectiveTransform(src, dst)
 
-        if DEBUG:
-            cv2.imshow("Debug Visual", vis_debug)
-            cv2.waitKey(1)
+            # make sure stabalized is BGR (warpPerspective needs it)
+            if len(stabilized.shape) == 2:
+                stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
 
-            # Lazy init: only create the writer once
-            if not hasattr(self, "_writer"):
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                h, w = vis_debug.shape[:2]
-                self._writer = cv2.VideoWriter("debug_visual.mp4", fourcc, 30.0, (w, h))
+            if DEBUG:
+                cv2.imshow("Debug Visual", vis_debug)
+                cv2.waitKey(1)
 
-            # Write current debug frame
-            self._writer.write(vis_debug)
+                # Lazy init: only create the writer once
+                if not hasattr(self, "_writer"):
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    h, w = vis_debug.shape[:2]
+                    self._writer = cv2.VideoWriter("debug_visual.mp4", fourcc, 30.0, (w, h))
 
-            # If ESC is pressed, release writer and close
-            if cv2.waitKey(1) == 27:
-                self._writer.release()
-                del self._writer
-                cv2.destroyWindow("Debug Visual")
+                # Write current debug frame
+                self._writer.write(vis_debug)
 
-        return cv2.warpPerspective(stabilized, M, (Wout, Hout))
+                # If ESC is pressed, release writer and close
+                if cv2.waitKey(1) == 27:
+                    self._writer.release()
+                    del self._writer
+                    cv2.destroyWindow("Debug Visual")
 
+            return cv2.warpPerspective(stabilized, M, (Wout, Hout))
+
+        except Exception as e:
+                print(e)
 
