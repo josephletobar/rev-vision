@@ -36,7 +36,7 @@ def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
 
     # ---- indicator dots (7.5 ft from foul line), spaced every 5 boards ----
     DOT_Y_IN = 7.5 * 12
-    DOT_BOARDS = [5, 10, 15, 20, 25, 30, 35]
+    DOT_BOARDS = [3, 5, 8, 11, 14, 36, 34, 31, 28, 25]
     DOT_DIAM_IN = 2
     for b in DOT_BOARDS:
         x_center_in = (b - 0.5) * BOARD_W_IN
@@ -45,33 +45,37 @@ def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
         radius_px = (DOT_DIAM_IN / 4) * sx  # inches→pixels
         ax.add_patch(Circle((xc, yc), radius=radius_px, color='k', zorder=2))
         
-    # ---- arrows (chevrons) at 15 ft ----
-    ARROW_BOARDS = [5,10,15,20,25,30,35]
-    ARROW_Y_IN  = 15*12 # 180"
-    for b in ARROW_BOARDS:
-        x_center_in = (b - 0.5) * BOARD_W_IN
+    # ---- arrows (chevrons), realistic 12–15 ft layout ----
+    ARROW_BOARDS = [(5, 12), (10, 13), (15, 14), (20, 15), (25, 14), (30, 13), (35, 12)]
+
+    for board, y_ft in ARROW_BOARDS:
+        x_center_in = (board - 0.5) * BOARD_W_IN
         xc = x_in_to_px(x_center_in)
-        w_in, h_in = BOARD_W_IN/2, 20 
+        w_in, h_in = BOARD_W_IN / 2, 20  # adjust for visual proportions
         pts = np.array([
-            [xc - w_in*sx, y_in_to_px(ARROW_Y_IN)],
-            [xc,           y_in_to_px(ARROW_Y_IN + h_in)],
-            [xc + w_in*sx, y_in_to_px(ARROW_Y_IN)],
+            [xc - w_in * sx, y_in_to_px(y_ft * 12)],
+            [xc,             y_in_to_px(y_ft * 12 + h_in)],
+            [xc + w_in * sx, y_in_to_px(y_ft * 12)],
         ])
         ax.add_patch(Polygon(pts, closed=True, facecolor="k", edgecolor="k", zorder=1))
 
-    # # ---- range finders (start at 37 ft from foul line) ----
-    # RANGE_Y_IN = 37 * 12
-    # RANGE_BOARDS = [15, 20, 25]
-    # for b in RANGE_BOARDS:
-    #     x_center_in = (b - 0.5) * BOARD_W_IN
-    #     xc = x_in_to_px(x_center_in)
-    #     w_in, h_in = 2 * BOARD_W_IN, 8
-    #     pts = np.array([
-    #         [xc - w_in, y_in_to_px(RANGE_Y_IN)],
-    #         [xc,        y_in_to_px(RANGE_Y_IN + h_in)],
-    #         [xc + w_in, y_in_to_px(RANGE_Y_IN)],
-    #     ])
-    #     ax.add_patch(Polygon(pts, closed=True, facecolor="k", edgecolor="k", zorder=1))
+    # ---- range finders (short lines 3 ft long) ----
+    RANGE_BOARDS = [(10, 40), (30, 40), (15, 34), (25, 34)]
+
+    for board, y_start_ft in RANGE_BOARDS:
+        x_center_in = (board - 0.5) * BOARD_W_IN
+        xc = x_in_to_px(x_center_in)
+
+        y_start_in = y_start_ft * 12
+        y_end_in   = (y_start_ft + 3) * 12   # 3 ft farther downlane
+
+        ax.plot(
+            [xc, xc],
+            [y_in_to_px(y_start_in), y_in_to_px(y_end_in)],
+            color="k",
+            linewidth=2,
+            zorder=1
+        )
 
 def visual(file_path):
     # Load points
@@ -133,6 +137,6 @@ def visual(file_path):
 
     plt.show()
 
-# python3 -m utils.cv_utils.simple_plot
+# python3 -m utils.cv_utils.lane_visual
 if __name__ == "__main__":
     visual("examples/points_run4.csv")
