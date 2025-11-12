@@ -77,7 +77,7 @@ def visual(file_path):
         frames=len(xs),
         init_func=init,
         interval=5, # ms between frame
-        blit=True,
+        blit=False,
         repeat=False
     )
 

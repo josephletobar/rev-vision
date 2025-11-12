@@ -47,8 +47,9 @@ def main():
         while(cap.isOpened()):
             ret, frame = cap.read()
             if not ret:
-                print("Frame read failed — skipping")
-                continue    
+                # print("Frame read failed — skipping")
+                # continue    
+                break
             
             # Run model on current frame to get its prediction mask
             _, pred_mask = deeplab_predict(frame, weights) 

@@ -112,9 +112,9 @@ class BirdsEyeTransformer:
 
             h, w = mask.shape[:2]
             center = (w // 2, h // 2)
-            rotation_gain = 1.35 # gain constant for rotation
+            rotation_gain = 1 #1.35 # gain constant for rotation
             stabilized = cv2.warpAffine(mask,
-                cv2.getRotationMatrix2D(center, np.degrees(avg_angle) * rotation_gain, 1.0),
+                cv2.getRotationMatrix2D(center, -np.degrees(avg_angle) * rotation_gain, 1.0),
                 (w, h)
             )
 
