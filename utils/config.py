@@ -4,4 +4,4 @@ LANE_H = 900   # height (lane length)
 
 # Debug Flags
 DEBUG_PIPELINE = True # high-level debug in main
-DEBUG_BIRDS_EYE = False # debug birds-eye module
+DEBUG_BIRDS_EYE = True # debug birds-eye module

@@ -34,7 +34,7 @@ def main():
     weights = "utils/ml_utils/weights/lane_deeplab_model_2.pth"
 
     # For video processing
-    cap = cv2.VideoCapture(args.video)
+    cap = cv2.VideoCapture(args.input)
 
     out = None
     if args.output:
