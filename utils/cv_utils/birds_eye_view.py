@@ -247,7 +247,7 @@ class BirdsEyeTransformer:
                 if not hasattr(self, "_writer"):
                     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                     h, w = vis_debug.shape[:2]
-                    self._writer = cv2.VideoWriter("debug_visual.mp4", fourcc, 30.0, (w, h))
+                    self._writer = cv2.VideoWriter("outputs/debug_visual.mp4", fourcc, 30.0, (w, h))
 
                 # Write current debug frame
                 self._writer.write(vis_debug)
