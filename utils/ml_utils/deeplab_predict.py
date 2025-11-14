@@ -27,7 +27,7 @@ transform = T.Compose([
 # Predict function
 def deeplab_predict(input_data, weights):
     if input_data is None:
-        print(f"None image in module {__name__}")
+        print(f"[deeplab_predict] None input_data in module {__name__}")
         return None, None
 
     model = load_model(weights)

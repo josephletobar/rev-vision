@@ -6,7 +6,7 @@ import numpy as np
 import subprocess
 from utils.ml_utils.deeplab_predict import deeplab_predict
 from utils.cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
-from utils.cv_utils.birds_eye_view import BirdsEyeTransformer
+from utils.cv_utils.transformers.birds_eye_transformer import BirdsEyeTransformer
 from utils.cv_utils.ball_detection import detect_ball
 from utils.cv_utils.lane_visual import visual
 from utils.cv_utils.trajectory import Trajectory
@@ -53,7 +53,7 @@ def main():
                 break
 
             if frame is None:
-                print(f"None image in module {__name__}")
+                print(f"[main] None frame read from capture in module {__name__}")
                 return
             
             # Run model on current frame to get its prediction mask
@@ -66,15 +66,19 @@ def main():
 
                 try: 
                     if frame is None or extraction is None:
-                        print(f"None image in module {__name__}")
+                        print(f"[main] None frame or extraction before perspective transform in module {__name__}")
                         return
 
-                    warp = perspective.warp(frame, extraction, alpha=0.3) # get a perspective transform
+                    warp = perspective.transform(frame, extraction, alpha=0.3) # get a perspective transform
+                    if warp is None:
+                        if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
+                        continue
+
                     H, W = warp.shape[:2]  # Height and width in pixels
                     if DEBUG_PIPELINE: print((H, W))
                     detect_ball(warp, warp, track=True, output_path=TRACKING_OUTPUT, trajectory_filter=filter) # detect ball on the warp, track this one
-                except Exception:
-                    if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
+                except RuntimeError as e:
+                    print(e)
                     continue
 
             cv2.imshow("Lane Overlay", preview)
@@ -91,11 +95,11 @@ def main():
                     #     out.write(warp)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break  # Exit on 'q' key
-                except Exception as e:
+                except RuntimeError as e:
                     print(e)
     
-    # except KeyboardInterrupt:
-    #     print("\nKeyboard interrupt detected. Cleaning up gracefully...")
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt detected. Cleaning up gracefully...")
 
     finally:
         cap.release()

@@ -15,7 +15,7 @@ class BaseMaskProcessor:
 
     def _prep_mask(self, mask, frame):
         if mask is None or frame is None:
-            print(f"None image in module {__name__}")
+            print(f"[BaseMaskProcessor._prep_mask] None image in module {__name__}")
             return None
 
         # resize to frame size if it isnt already
@@ -23,6 +23,7 @@ class BaseMaskProcessor:
             mask = cv2.resize(mask, (frame.shape[1], frame.shape[0]))
         # size threshold
         if (np.count_nonzero(mask) / mask.size) < self.min_fraction:
+            print(f"[BaseMaskProcessor._prep_mask] Mask fraction below min_fraction ({self.min_fraction})")
             return None  # dont count small masks
         # binarize for OpenCV use: {0,255} uint8 
         m = ((mask > self.bin_thresh).astype(np.uint8) * 255)
@@ -44,6 +45,7 @@ class OverlayProcessor(BaseMaskProcessor):
     def apply(self, mask, frame):
         m = self._prep_mask(mask, frame)
         if m is None:
+            print("[OverlayProcessor.apply] Preprocessed mask is None, returning original frame")
             return frame
 
         # green tint mask
@@ -65,6 +67,7 @@ class ExtractProcessor(BaseMaskProcessor):
     def apply(self, mask, frame):
         m = self._prep_mask(mask, frame)
         if m is None:
+            print("[ExtractProcessor.apply] Preprocessed mask is None, skipping extraction")
             return None  # no valid mask this frame
         
         # soften edges and binarize
@@ -79,6 +82,7 @@ class ExtractProcessor(BaseMaskProcessor):
         # Tight crop to lane bounding box
         ys, xs = np.where(m > 0)
         if xs.size == 0 or ys.size == 0:
+            print("[ExtractProcessor.apply] No nonzero pixels after mask preprocessing")
             return None
         x0, x1 = xs.min(), xs.max()
         y0, y1 = ys.min(), ys.max()

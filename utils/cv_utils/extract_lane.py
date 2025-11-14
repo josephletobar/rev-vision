@@ -4,7 +4,7 @@ from ml_utils.deeplab_predict import deeplab_predict
 
 def post_processing(mask, frame):
     if mask is None or frame is None:
-        print(f"None image in module {__name__}")
+        print(f"[post_processing] None mask or frame in module {__name__}")
         return frame
 
     # Mask size threshhold

@@ -51,9 +51,10 @@ def detect_ball(img, preview, track=False, output_path=None, trajectory_filter=N
             best_contrast = contrast
             best_kp = kp
 
-    # Draw all the previous points
-    for i in range(1, len(trajectory.accepted)):
-                cv2.line(preview, trajectory.accepted[i-1], trajectory.accepted[i], (0, 0, 255), 5)
+    if track:
+        # Draw all the previous points
+        for i in range(1, len(trajectory.accepted)):
+                    cv2.line(preview, trajectory.accepted[i-1], trajectory.accepted[i], (0, 0, 255), 5)
 
     # Pick only if contrast passes threshold
     if best_kp is not None and best_contrast > 10:  # threshold can be tuned (try 8–15)
