@@ -14,6 +14,10 @@ class BaseMaskProcessor:
         self.post_thresh = post_thresh     
 
     def _prep_mask(self, mask, frame):
+        if mask is None or frame is None:
+            print(f"None image in module {__name__}")
+            return None
+
         # resize to frame size if it isnt already
         if self.resize_to_frame and (mask.shape[:2] != frame.shape[:2]):
             mask = cv2.resize(mask, (frame.shape[1], frame.shape[0]))
@@ -80,4 +84,3 @@ class ExtractProcessor(BaseMaskProcessor):
         y0, y1 = ys.min(), ys.max()
         return cutout[y0:y1+1, x0:x1+1]
     
-

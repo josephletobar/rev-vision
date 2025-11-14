@@ -26,6 +26,10 @@ transform = T.Compose([
 
 # Predict function
 def deeplab_predict(input_data, weights):
+    if input_data is None:
+        print(f"None image in module {__name__}")
+        return None, None
+
     model = load_model(weights)
 
     if isinstance(input_data, str):  # filepath
@@ -58,6 +62,10 @@ if __name__ == "__main__":
     for filename in sorted(os.listdir(test_dir))[:50]:  # preview x predictions
         if not filename.endswith(".png"): continue
         img_path = os.path.join(test_dir, filename)
+
+        if img_path is None:
+            print(f"None image in module {__name__}")
+            continue
 
         img, pred = deeplab_predict(img_path, weights)
 

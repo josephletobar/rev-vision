@@ -3,6 +3,10 @@ import numpy as np
 from ml_utils.deeplab_predict import deeplab_predict
 
 def post_processing(mask, frame):
+    if mask is None or frame is None:
+        print(f"None image in module {__name__}")
+        return frame
+
     # Mask size threshhold
     min_fraction = 0.01
     mask_fraction = np.count_nonzero(mask) / mask.size

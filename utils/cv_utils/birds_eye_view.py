@@ -208,6 +208,10 @@ class BirdsEyeTransformer:
     def warp(self, frame, mask, alpha=1):
         """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
 
+        if frame is None or mask is None:
+            print(f"None image in module {__name__}")
+            return None
+
         if DEBUG_BIRDS_EYE:
             vis_debug = mask.copy()
 
@@ -262,4 +266,3 @@ class BirdsEyeTransformer:
 
         except Exception as e:
                 print(e)
-

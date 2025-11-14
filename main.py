@@ -49,8 +49,12 @@ def main():
             ret, frame = cap.read()
             if not ret:
                 # print("Frame read failed — skipping")
-                # continue    
+                # continue
                 break
+
+            if frame is None:
+                print(f"None image in module {__name__}")
+                return
             
             # Run model on current frame to get its prediction mask
             _, pred_mask = deeplab_predict(frame, weights) 
@@ -61,12 +65,16 @@ def main():
                 detect_ball(extraction, preview) # detect extraction on the extraction
 
                 try: 
+                    if frame is None or extraction is None:
+                        print(f"None image in module {__name__}")
+                        return
+
                     warp = perspective.warp(frame, extraction, alpha=0.3) # get a perspective transform
-                    # H, W = warp.shape[:2]  # Height and width in pixels
-                    # print((H, W))
+                    H, W = warp.shape[:2]  # Height and width in pixels
+                    if DEBUG_PIPELINE: print((H, W))
                     detect_ball(warp, warp, track=True, output_path=TRACKING_OUTPUT, trajectory_filter=filter) # detect ball on the warp, track this one
                 except Exception:
-                    # print("Skipping frame: no valid lane mask")
+                    if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
                     continue
 
             cv2.imshow("Lane Overlay", preview)
