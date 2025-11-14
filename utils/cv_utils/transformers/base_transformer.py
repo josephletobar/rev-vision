@@ -8,19 +8,25 @@ class BaseTransformer:
         self.out_size = out_size
         self.debug = debug
 
-    def _prepare_mask(self, mask: np.ndarray):
-        """Ensure mask is grayscale and return its nonzero pixel coordinates."""
+    def _ensure_grayscale(self, mask: np.ndarray):
         if mask.ndim == 3:
             mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        # mask[mask > 127] = 255  # mark all selected pixels white TODO: (wont work for light colored balls so need to switch to ML based)
+        return mask
     
-        mask = (mask > 127).astype(np.uint8) * 255
-
+    def _white_mask(self, mask: np.ndarray):
+        """ Works on grayscale images"""
+        mask = self._ensure_grayscale(mask)
+        mask[mask > 127] = 255  # mark all selected pixels white TODO: (wont work for light colored balls so need to switch to ML based)
+        # mask = (mask > 127).astype(np.uint8) * 255 # full blakc and white 
         return mask
     
     def _nonzero_coords(self, mask):
+        mask = self._ensure_grayscale(mask)
         ys, xs = np.where(mask > 127)
         return ys, xs
+    
+
+    # --- Find Lane Left / Right Boundaries For Stabilizaiton (All Downstream Transforms Utilize This) ---
 
     def _average_lines(self, lines, frame_size):
         """
@@ -75,6 +81,9 @@ class BaseTransformer:
         Returns:
             np.ndarray: Rotated (stabilized) mask, or None if no valid lines are found.
         """
+
+        mask = self._ensure_grayscale(mask)
+        mask = mask.astype(np.uint8)
 
         ys, xs = self._nonzero_coords(mask)
 
@@ -134,10 +143,20 @@ class BaseTransformer:
         h, w = mask.shape[:2]
         center = (w // 2, h // 2)
         rotation_gain = 1 #1.35 # gain constant for rotation
-        stabilized = cv2.warpAffine(mask,
-            cv2.getRotationMatrix2D(center, -np.degrees(avg_angle) * rotation_gain, 1.0),
-            (w, h)
-        )
+
+        M = cv2.getRotationMatrix2D(center, -np.degrees(avg_angle) * rotation_gain, 1.0)
+
+        stabilized = cv2.warpAffine(mask, M, (w, h))
+
+        # helper: rotate a line by the same affine matrix
+        def _rotate_line(line, M):
+            x1, y1, x2, y2 = line
+            p1 = M @ np.array([x1, y1, 1.0])
+            p2 = M @ np.array([x2, y2, 1.0])
+            return int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1])
+
+        rot_left  = _rotate_line(avg_left,  M)
+        rot_right = _rotate_line(avg_right, M)
 
         if vis_debug is not None:
             print("LANE TILT AMOUNT: ", avg_angle)
@@ -158,7 +177,7 @@ class BaseTransformer:
                 cv2.line(vis_debug, avg_right[:2], avg_right[2:], (180, 180, 180), 4) 
             # cv2.imshow("Stabalizing Debug ", vis_debug) # optionally show it seperately
 
-        return stabilized
+        return stabilized, rot_left, rot_right
 
     def transform(self, data):
         raise NotImplementedError

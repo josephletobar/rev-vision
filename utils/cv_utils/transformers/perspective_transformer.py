@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from utils.cv_utils.transformers.base_transformer import BaseTransformer
+from utils.cv_utils.transformers.geometric_transformer import GeometricTransformer
 
 class BirdsEyeTransformer(BaseTransformer):
 
@@ -85,15 +86,12 @@ class BirdsEyeTransformer(BaseTransformer):
         if self.debug:
             vis_debug = mask.copy()
 
-       
-        mask_prepared = self._prepare_mask(mask)
-
-        stabilized = self._stabilize_rotation(mask_prepared, vis_debug if self.debug else None)
+        stabilized, rot_left, rot_right = self._stabilize_rotation(mask, vis_debug if self.debug else None)
         if stabilized is None:
             msg = "[BirdsEyeTransformer.transform] Stabilization returned None"
             print(msg)
             raise RuntimeError(msg)
-        
+                
         corners = self._get_mask_corners(stabilized, vis_debug if self.debug else None)
         if corners is None:
             msg = "[BirdsEyeTransformer.transform] Corner detection returned None"

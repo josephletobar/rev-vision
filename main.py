@@ -6,7 +6,8 @@ import numpy as np
 import subprocess
 from utils.ml_utils.deeplab_predict import deeplab_predict
 from utils.cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
-from utils.cv_utils.transformers.birds_eye_transformer import BirdsEyeTransformer
+from utils.cv_utils.transformers.perspective_transformer import BirdsEyeTransformer
+from utils.cv_utils.transformers.geometric_transformer import GeometricTransformer
 from utils.cv_utils.ball_detection import detect_ball
 from utils.cv_utils.lane_visual import visual
 from utils.cv_utils.trajectory import Trajectory
@@ -16,6 +17,7 @@ def main():
     overlay = OverlayProcessor()
     extract = ExtractProcessor()
     perspective = BirdsEyeTransformer()
+    geometric = GeometricTransformer()
     filter = Trajectory(buffer_size=5, threshold=120)
 
     # set CSV at the start of each run
@@ -89,7 +91,7 @@ def main():
 
             if DEBUG_PIPELINE:
                 try:
-                    detect_ball(warp, warp)
+                    # detect_ball(warp, warp)
                     cv2.imshow("Test", warp)
                     # if out:
                     #     out.write(warp)
@@ -108,7 +110,8 @@ def main():
         cv2.destroyAllWindows()
 
     # Run plotting script
-    visual(TRACKING_OUTPUT)
+    if not DEBUG_PIPELINE: # just show it if not debugging
+        visual(TRACKING_OUTPUT)
 
 # python3 main.py --input test_videos/bowling.mp4
 if __name__ == "__main__":

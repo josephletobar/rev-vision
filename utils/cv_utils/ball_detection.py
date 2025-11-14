@@ -7,7 +7,10 @@ trajectory = Trajectory()
 
 def detect_ball(img, preview, track=False, output_path=None, trajectory_filter=None):
 
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if img.ndim == 2:
+        img_gray = img
+    else:
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_blur = cv2.medianBlur(img_gray, 5)
 
     # --- Blob detector params ---
