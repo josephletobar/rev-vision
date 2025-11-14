@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from utils.config import LANE_W, LANE_H
+from utils.config import LANE_W, LANE_H, DEBUG_BIRDS_EYE
 
 class BirdsEyeTransformer:
     def __init__(self, out_size=(LANE_W, LANE_H)):
@@ -13,6 +13,7 @@ class BirdsEyeTransformer:
 
         # return pixel coords where the mask pixel value is > 0
         ys, xs = np.where(mask > 127)
+        mask[ys, xs] = 255  # mark all selected pixels white TODO: (wont work for light colored balls so need to switch to ML based)
         return mask, ys, xs
     
     def _average_lines(self, lines, frame_size):
@@ -51,6 +52,7 @@ class BirdsEyeTransformer:
 
         return (x1, y1, x2, y2), angle
 
+    #TODO: implement pitch correction
     def _stabilize_rotation(self, mask: np.ndarray, vis_debug=None):
         """
         Stabilize the lane mask by detecting its outer lane lines,
@@ -206,15 +208,14 @@ class BirdsEyeTransformer:
     def warp(self, frame, mask, alpha=1):
         """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
 
-        DEBUG = False # set True / False as needed
-        if DEBUG:
+        if DEBUG_BIRDS_EYE:
             vis_debug = mask.copy()
 
         try:
 
-            stabilized = self._stabilize_rotation(mask, vis_debug if DEBUG else None)
+            stabilized = self._stabilize_rotation(mask, vis_debug if DEBUG_BIRDS_EYE else None)
 
-            corners = self._get_mask_corners(stabilized, vis_debug if DEBUG else None)
+            corners = self._get_mask_corners(stabilized, vis_debug if DEBUG_BIRDS_EYE else None)
             if corners is None:
                 return None
 
@@ -238,7 +239,7 @@ class BirdsEyeTransformer:
             if len(stabilized.shape) == 2:
                 stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
 
-            if DEBUG:
+            if DEBUG_BIRDS_EYE:
                 cv2.imshow("Debug Visual", vis_debug)
                 cv2.waitKey(1)
 

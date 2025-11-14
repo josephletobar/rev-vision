@@ -26,6 +26,6 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 2. **Run**
    Provide a recorded bowling session video (e.g., from `test_videos/`) to the main script:
    ```bash
-   python main.py --video path/to/bowling_session.mp4
+   python main.py --input path/to/bowling_session.mp4
    ```
 

@@ -4,6 +4,7 @@ import matplotlib.animation as animation
 from matplotlib.patches import Rectangle, Polygon, Circle
 from utils.config import LANE_H, LANE_W
 
+#TODO: Project points properly w warp
 def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
     # Lane measurement constants (inches)
     LANE_W_IN   = 41.5            # between gutters
@@ -139,4 +140,5 @@ def visual(file_path):
 
 # python3 -m utils.cv_utils.lane_visual
 if __name__ == "__main__":
-    visual("examples/points_run4.csv")
+    # visual("examples/points_run4.csv")
+    visual("outputs/points.csv")

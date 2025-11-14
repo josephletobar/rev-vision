@@ -10,6 +10,7 @@ from utils.cv_utils.birds_eye_view import BirdsEyeTransformer
 from utils.cv_utils.ball_detection import detect_ball
 from utils.cv_utils.lane_visual import visual
 from utils.cv_utils.trajectory import Trajectory
+from utils.config import DEBUG_PIPELINE
 
 def main():
     overlay = OverlayProcessor()
@@ -25,7 +26,7 @@ def main():
 
     # Parse arguments
     parser = argparse.ArgumentParser(description="Lane Assist Video Processing")
-    parser.add_argument("--video", type=str, required=True, help="Path to video file")
+    parser.add_argument("--input", type=str, required=True, help="Path to video file")
     parser.add_argument("--output", type=str, help="Path to save output video (optional)")
     args = parser.parse_args()
 
@@ -69,21 +70,21 @@ def main():
                     continue
 
             cv2.imshow("Lane Overlay", preview)
-            # if out:
-            #     out.write(preview)
+            if out:
+                out.write(preview)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break  # Exit on 'q' key
 
-            # TESTING
-            try:
-                detect_ball(warp, warp)
-                cv2.imshow("Test", warp)
-                if out:
-                  out.write(warp)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break  # Exit on 'q' key
-            except Exception as e:
-                print(e)
+            if DEBUG_PIPELINE:
+                try:
+                    detect_ball(warp, warp)
+                    cv2.imshow("Test", warp)
+                    # if out:
+                    #     out.write(warp)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break  # Exit on 'q' key
+                except Exception as e:
+                    print(e)
     
     # except KeyboardInterrupt:
     #     print("\nKeyboard interrupt detected. Cleaning up gracefully...")
@@ -97,6 +98,6 @@ def main():
     # Run plotting script
     visual(TRACKING_OUTPUT)
 
-# python3 main.py --video test_videos/bowling.mp4
+# python3 main.py --input test_videos/bowling.mp4
 if __name__ == "__main__":
     main()
