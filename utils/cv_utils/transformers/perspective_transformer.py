@@ -88,11 +88,14 @@ class BirdsEyeTransformer(BaseTransformer):
         if self.debug:
             vis_debug = mask.copy()
 
-        stabilized, rot_left, rot_right = self._stabilize_rotation(mask, vis_debug if self.debug else None)
+        stabilized = self._stabilize_rotation(mask, vis_debug if self.debug else None)
         if stabilized is None:
             msg = "[BirdsEyeTransformer.transform] Stabilization returned None"
             print(msg)
             raise RuntimeError(msg)
+        
+        geo = geometric._transform(stabilized)
+
                 
         corners = self._get_mask_corners(stabilized, vis_debug if self.debug else None)
         if corners is None:
@@ -121,27 +124,6 @@ class BirdsEyeTransformer(BaseTransformer):
             stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
 
         warp = (cv2.warpPerspective(stabilized, M, (Wout, Hout)))
-
-        ## FULL BIRDSSEYE
-        dst = np.float32([
-            [0, 0],
-            [Wout - 1, 0],
-            [Wout - 1, Hout - 1],
-            [0, Hout - 1],
-        ])
-
-        mid_x = (dst[0, 0] + dst[1, 0]) / 2.0
-        dst[0, 0] = mid_x - 1 * (mid_x - dst[0, 0])
-        dst[1, 0] = mid_x + 1 * (dst[1, 0] - mid_x)
-
-        M = cv2.getPerspectiveTransform(src, dst)
-
-        # make sure stabalized is BGR (warpPerspective needs it)
-        if len(stabilized.shape) == 2:
-            stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
-
-        birds = (cv2.warpPerspective(stabilized, M, (Wout, Hout)))
-        geo = geometric._transform(birds)
 
         ## debug
 

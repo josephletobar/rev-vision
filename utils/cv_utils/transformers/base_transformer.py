@@ -177,7 +177,7 @@ class BaseTransformer:
                 cv2.line(vis_debug, avg_right[:2], avg_right[2:], (180, 180, 180), 4) 
             # cv2.imshow("Stabalizing Debug ", vis_debug) # optionally show it seperately
 
-        return stabilized, rot_left, rot_right
+        return stabilized
 
     def transform(self, data):
         raise NotImplementedError
