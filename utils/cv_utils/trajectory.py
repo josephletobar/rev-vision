@@ -5,10 +5,19 @@ class Trajectory:
         self.buffer_size = buffer_size
         self.threshold = threshold
         self.seeding_buffer = []
-        self.accepted = []
+        self.buffer = []
 
-    def points_buffer(self, new_point):
-        self.accepted.append(new_point)
+    def push(self, new_point):
+        self.buffer.append(new_point)
+        self.buffer_size += 1
+
+    def last(self):
+        if len(self.buffer) == 0:
+            return None
+        return self.buffer[-1]
+    
+    def all(self):
+        return self.buffer
 
     # not using currently
     def update(self, new_point):
@@ -16,8 +25,8 @@ class Trajectory:
         if len(self.seeding_buffer) == self.buffer_size: 
             self.seeding_buffer.append(new_point)
             mean_point = np.mean(self.seeding_buffer, axis=0) # mean across columns
-            self.accepted.append(mean_point)
-            return mean_point # first accepted point
+            self.buffer.append(mean_point)
+            return mean_point # first buffer point
         
         elif len(self.seeding_buffer) < self.buffer_size: # Must continue seeding
             self.seeding_buffer.append(new_point)
@@ -25,13 +34,13 @@ class Trajectory:
 
         # Enough seeding
         else: 
-            # Start checking points (new point compared to the last accepted point)
-            last_point = self.accepted[-1]
+            # Start checking points (new point compared to the last buffer point)
+            last_point = self.buffer[-1]
             dist = np.linalg.norm(np.array(new_point) - np.array(last_point))
 
             if dist > self.threshold: # too far, reject
                 return None
             else:
-                self.accepted.append(new_point) 
+                self.buffer.append(new_point) 
 
         return new_point

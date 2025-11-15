@@ -3,6 +3,8 @@ import numpy as np
 from utils.cv_utils.transformers.base_transformer import BaseTransformer
 from utils.cv_utils.transformers.geometric_transformer import GeometricTransformer
 
+geometric = GeometricTransformer()
+
 class BirdsEyeTransformer(BaseTransformer):
 
     # needed for perspective transform
@@ -118,8 +120,33 @@ class BirdsEyeTransformer(BaseTransformer):
         if len(stabilized.shape) == 2:
             stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
 
+        warp = (cv2.warpPerspective(stabilized, M, (Wout, Hout)))
+
+        ## FULL BIRDSSEYE
+        dst = np.float32([
+            [0, 0],
+            [Wout - 1, 0],
+            [Wout - 1, Hout - 1],
+            [0, Hout - 1],
+        ])
+
+        mid_x = (dst[0, 0] + dst[1, 0]) / 2.0
+        dst[0, 0] = mid_x - 1 * (mid_x - dst[0, 0])
+        dst[1, 0] = mid_x + 1 * (dst[1, 0] - mid_x)
+
+        M = cv2.getPerspectiveTransform(src, dst)
+
+        # make sure stabalized is BGR (warpPerspective needs it)
+        if len(stabilized.shape) == 2:
+            stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
+
+        birds = (cv2.warpPerspective(stabilized, M, (Wout, Hout)))
+        geo = geometric._transform(birds)
+
+        ## debug
+
         if self.debug:
-            cv2.imshow("Debug Visual", vis_debug)
+            cv2.imshow("Debug Visual", geo)
             cv2.waitKey(1)
 
             # Lazy init: only create the writer once
@@ -137,5 +164,5 @@ class BirdsEyeTransformer(BaseTransformer):
                 del self._writer
                 cv2.destroyWindow("Debug Visual")
 
-        return cv2.warpPerspective(stabilized, M, (Wout, Hout))
+        return warp
 

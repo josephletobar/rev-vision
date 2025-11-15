@@ -13,10 +13,10 @@ class BaseTransformer:
             mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
         return mask
     
-    def _white_mask(self, mask: np.ndarray):
+    def _white_mask(self, mask: np.ndarray, thresh=127):
         """ Works on grayscale images"""
         mask = self._ensure_grayscale(mask)
-        mask[mask > 127] = 255  # mark all selected pixels white TODO: (wont work for light colored balls so need to switch to ML based)
+        mask[mask > thresh] = 255  # mark all selected pixels white TODO: (wont work for light colored balls so need to switch to ML based)
         # mask = (mask > 127).astype(np.uint8) * 255 # full blakc and white 
         return mask
     
