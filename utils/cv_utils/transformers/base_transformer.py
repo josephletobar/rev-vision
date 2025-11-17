@@ -8,6 +8,9 @@ class BaseTransformer:
         self.out_size = out_size
         self.debug = debug
 
+        self.avg_left_line = None
+        self.avg_right_line = None
+
     def _ensure_grayscale(self, mask: np.ndarray):
         if mask.ndim == 3:
             mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
@@ -50,7 +53,8 @@ class BaseTransformer:
         if not slopes:
             msg = "[BaseTransformer._average_lines] No valid slopes/lines found"
             print(msg)
-            raise RuntimeError(msg)  # no valid lines
+            # raise RuntimeError(msg)  # no valid lines
+            return None
 
         avg_slope = np.mean(slopes)
         avg_intercept = np.mean(intercepts)
@@ -138,6 +142,10 @@ class BaseTransformer:
         avg_right, right_angle = right_result
         avg_left, left_angle = left_result
 
+        # # store in the instance
+        # self.avg_left_line = avg_left
+        # self.avg_right_line = avg_right
+
         avg_angle = (left_angle + right_angle) / 2 # tells how much the whole lane has tilted
 
         h, w = mask.shape[:2]
@@ -157,6 +165,10 @@ class BaseTransformer:
 
         rot_left  = _rotate_line(avg_left,  M)
         rot_right = _rotate_line(avg_right, M)
+
+        # store in the instance
+        self.avg_left_line = rot_left
+        self.avg_right_line = rot_right
 
         if vis_debug is not None:
             print("LANE TILT AMOUNT: ", avg_angle)

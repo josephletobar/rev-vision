@@ -1,9 +1,8 @@
 import cv2
 import numpy as np
 from utils.cv_utils.transformers.base_transformer import BaseTransformer
-from utils.cv_utils.transformers.geometric_transformer import GeometricTransformer
-
-geometric = GeometricTransformer()
+# from utils.cv_utils.transformers.geometric_transformer import GeometricTransformer
+from utils.cv_utils.transformers.geometric_helper import geometric_transform
 
 class BirdsEyeTransformer(BaseTransformer):
 
@@ -94,8 +93,8 @@ class BirdsEyeTransformer(BaseTransformer):
             print(msg)
             raise RuntimeError(msg)
         
-        geo = geometric._transform(stabilized)
-
+        # # geo = self.geometric._transform(stabilized)
+        geo = geometric_transform(self, stabilized)
                 
         corners = self._get_mask_corners(stabilized, vis_debug if self.debug else None)
         if corners is None:
@@ -128,7 +127,7 @@ class BirdsEyeTransformer(BaseTransformer):
         ## debug
 
         if self.debug:
-            cv2.imshow("Debug Visual", geo)
+            cv2.imshow("Debug Visual", vis_debug)
             cv2.waitKey(1)
 
             # Lazy init: only create the writer once
