@@ -94,7 +94,7 @@ class BirdsEyeTransformer(BaseTransformer):
             raise RuntimeError(msg)
         
         # # geo = self.geometric._transform(stabilized)
-        geo = geometric_transform(self, stabilized)
+        # geometric_transform(self, stabilized)
                 
         corners = self._get_mask_corners(stabilized, vis_debug if self.debug else None)
         if corners is None:

@@ -4,8 +4,8 @@ import numpy as np
 from PIL import Image
 from labelme import utils
 
-input_dir = "data/annotations"
-output_dir = "data/masks"
+input_dir = "data/lane_annotations"
+output_dir = "data/lane_masks"
 os.makedirs(output_dir, exist_ok=True)
 
 for file in os.listdir(input_dir):

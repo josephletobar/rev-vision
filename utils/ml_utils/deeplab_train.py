@@ -8,7 +8,7 @@ from ml_utils.deeplab_model import get_deeplab_model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Data
-dataset = LaneDataset("data/images", "data/masks")
+dataset = LaneDataset("data/images", "data/lane_masks")
 dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
 
 # Model (binary head inside your getter)

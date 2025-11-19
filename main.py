@@ -7,7 +7,6 @@ import subprocess
 from utils.ml_utils.deeplab_predict import deeplab_predict
 from utils.cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
 from utils.cv_utils.transformers.perspective_transformer import BirdsEyeTransformer
-from utils.cv_utils.transformers.geometric_transformer import GeometricTransformer
 from utils.cv_utils.ball_detection import detect_ball
 from utils.cv_utils.lane_visual import visual
 from utils.cv_utils.trajectory import Trajectory
@@ -17,7 +16,6 @@ def main():
     overlay = OverlayProcessor()
     extract = ExtractProcessor()
     perspective = BirdsEyeTransformer()
-    geometric = GeometricTransformer()
     filter = Trajectory(buffer_size=5, threshold=120)
 
     # set CSV at the start of each run

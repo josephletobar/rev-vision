@@ -42,7 +42,7 @@ class LaneDataset(Dataset):
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
 
-    dataset = LaneDataset("data/images/", "data/masks/")
+    dataset = LaneDataset("data/images/", "data/lane_masks/")
     print(f"Loaded {len(dataset)} image–mask pairs:\n")
 
     for name in dataset.image_names:
