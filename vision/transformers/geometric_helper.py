@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
-from utils.cv_utils.transformers.base_transformer import BaseTransformer
+from vision.transformers.base_transformer import BaseTransformer
 from utils.config import LANE_W, LANE_H
-from utils.cv_utils.trajectory import Trajectory
+from vision.trajectory import Trajectory
 
 buffer = Trajectory()
 

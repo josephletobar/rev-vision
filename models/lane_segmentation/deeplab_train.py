@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from ml_utils.lane_dataset import LaneDataset
-from ml_utils.deeplab_model import get_deeplab_model
+from models.lane_segmentation.lane_dataset import LaneDataset
+from models.lane_segmentation.deeplab_model import get_deeplab_model
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

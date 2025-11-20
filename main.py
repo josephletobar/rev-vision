@@ -4,12 +4,12 @@ import cv2
 import csv
 import numpy as np
 import subprocess
-from utils.ml_utils.deeplab_predict import deeplab_predict
-from utils.cv_utils.mask_processing import OverlayProcessor, ExtractProcessor
-from utils.cv_utils.transformers.perspective_transformer import BirdsEyeTransformer
-from utils.cv_utils.ball_detection import detect_ball
-from utils.cv_utils.lane_visual import visual
-from utils.cv_utils.trajectory import Trajectory
+from models.lane_segmentation.deeplab_predict import deeplab_predict
+from vision.mask_processing import OverlayProcessor, ExtractProcessor
+from vision.transformers.perspective_transformer import BirdsEyeTransformer
+from vision.ball_detection import detect_ball
+from vision.lane_visual import visual
+from vision.trajectory import Trajectory
 from utils.config import DEBUG_PIPELINE
 
 def main():
@@ -31,7 +31,7 @@ def main():
     args = parser.parse_args()
 
     # Load weights
-    weights = "utils/ml_utils/weights/lane_deeplab_model_2.pth"
+    weights = "models/weights/lane_deeplab_model_2.pth" 
 
     # For video processing
     cap = cv2.VideoCapture(args.input)

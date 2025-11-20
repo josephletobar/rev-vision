@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from ml_utils.deeplab_predict import deeplab_predict
+from models.lane_segmentation.deeplab_predict import deeplab_predict
 
 def post_processing(mask, frame):
     if mask is None or frame is None:

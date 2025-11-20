@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import csv
 
-from utils.cv_utils.trajectory import Trajectory
+from vision.trajectory import Trajectory
 trajectory = Trajectory()
 
 def detect_ball(img, preview, track=False, output_path=None, trajectory_filter=None):

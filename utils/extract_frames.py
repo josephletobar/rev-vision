@@ -1,6 +1,8 @@
 import cv2
 import os
 
+# Extract frames from a given video for training
+
 def extract_frames(video_path, output_dir, step=30):
     cap = cv2.VideoCapture(video_path)
     os.makedirs(output_dir, exist_ok=True)
