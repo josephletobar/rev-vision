@@ -2,8 +2,7 @@ from torch.utils.data import Dataset
 import os
 import numpy as np
 import cv2
-
-# PyTorch dataset that loads each resized training image and its corresponding arrow heatmap
+import torch
 
 class ArrowDataset(Dataset):
     def __init__(self, img_dir, hm_dir):
@@ -17,6 +16,7 @@ class ArrowDataset(Dataset):
                 stem = f.replace(".npy", "")
                 img_path = os.path.join(self.img_dir, stem + ".png")
                 hm_path  = os.path.join(self.hm_dir, f)
+
                 if os.path.exists(img_path):
                     self.items.append((img_path, hm_path))
 
@@ -26,15 +26,29 @@ class ArrowDataset(Dataset):
     def __getitem__(self, idx):
         img_path, hm_path = self.items[idx]
 
+        # load image (H,W,3)
         img = cv2.imread(img_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
 
+        # HWC → CHW
+        img = np.transpose(img, (2, 0, 1))
+        img = torch.from_numpy(img).float()
+
+        # load heatmap (H,W,3)
         hm = np.load(hm_path).astype(np.float32)
 
+        # HWC → CHW
+        hm = np.transpose(hm, (2, 0, 1))
+        hm = torch.from_numpy(hm).float()
+
+        # print("DEBUG IMG SHAPE:", img.shape, "   HM SHAPE:", hm.shape)
+
         return img, hm
-    
+
+
+# optional manual debug runner
 if __name__ == "__main__":
-    IMG_DIR = "data/arrow_data/images"
+    IMG_DIR = "data/arrow_data/images_out"
     HM_DIR  = "data/arrow_data/heatmaps"
 
     ds = ArrowDataset(IMG_DIR, HM_DIR)
@@ -42,13 +56,5 @@ if __name__ == "__main__":
 
     if len(ds) > 0:
         img, hm = ds[0]
-        print("Image shape:", img.shape)
-        print("Heatmap shape:", hm.shape)
-
-        # visualize
-        disp = (img * 255).astype(np.uint8).copy()
-        hm_vis = (hm.max(axis=-1) * 255).astype(np.uint8)
-
-        cv2.imshow("image", cv2.cvtColor(disp, cv2.COLOR_RGB2BGR))
-        cv2.imshow("heatmap max", hm_vis)
-        cv2.waitKey(0)
+        print("Returned image shape:", img.shape)
+        print("Returned heatmap shape:", hm.shape)
