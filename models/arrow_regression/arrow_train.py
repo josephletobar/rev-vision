@@ -11,7 +11,7 @@ from arrow_model import ArrowRegressor
 # config
 IMG_DIR = "data/arrow_data/images_out"
 HM_DIR  = "data/arrow_data/heatmaps"
-SAVE_DIR = "data/arrow_regression/weights"
+SAVE_DIR = "models/arrow_regression/weights"
 
 BATCH_SIZE = 4
 EPOCHS = 200          # you can change this
