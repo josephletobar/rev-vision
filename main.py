@@ -31,11 +31,12 @@ def main():
     args = parser.parse_args()
 
     # Load weights
-    weights = "models/lane_segmentation/weights/lane_deeplab_model_2.pth" 
+    weights = "data/weights/lane_deeplab_model_2.pth" 
 
     # For video processing
     cap = cv2.VideoCapture(args.input)
 
+    writer2 = None
     out = None
     if args.output:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -62,7 +63,7 @@ def main():
 
             extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
             if extraction is not None:
-                detect_ball(extraction, preview) # detect extraction on the extraction
+                detect_ball(extraction, preview) # detect ball on the extraction
 
                 try: 
                     if frame is None or extraction is None:
@@ -70,9 +71,12 @@ def main():
                         return
 
                     warp = perspective.transform(frame, extraction, alpha=0.3) # get a perspective transform
+
                     if warp is None:
                         if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
                         continue
+
+                    warp_copy = warp.copy()
 
                     H, W = warp.shape[:2]  # Height and width in pixels
                     if DEBUG_PIPELINE: print((H, W))
@@ -89,14 +93,24 @@ def main():
 
             if DEBUG_PIPELINE:
                 try:
-                    # detect_ball(warp, warp)
-                    cv2.imshow("Test", warp)
-                    # if out:
-                    #     out.write(warp)
+                    cv2.imshow("Debug", warp_copy)
+                    height, width = warp_copy.shape[:2]         
+                    warp_copy = cv2.resize(warp_copy, (width, height))
+                    if writer2 is None:
+                        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                        writer2 = cv2.VideoWriter(
+                            "outputs/segmented_mask8.mp4",
+                            fourcc,
+                            30.0,
+                            (width, height)
+                        )
+                    writer2.write(warp_copy)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break  # Exit on 'q' key
-                except RuntimeError as e:
-                    print(e)
+                        writer2.release()
+                        cv2.destroyAllWindows()
+                        break
+                except:
+                    pass
     
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Cleaning up gracefully...")
