@@ -1,0 +1,6 @@
+ok well im back at it. ive pulled and saved the segmented and perspectie transformed lane i think this willbe a great help.
+
+while im already going to have to relabel id like to also label the dots while im at it. so know you know the task so i have a few questions actually:
+
+1. how many frames shouldi extract to label rougly? 500? 100? 1000?
+2. how many arrows and dots should i label? each one? would this help or make it more challenginfor the model?

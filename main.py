@@ -111,7 +111,7 @@ def main():
                         break
                 except:
                     pass
-    
+
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Cleaning up gracefully...")
 
