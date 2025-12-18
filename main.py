@@ -76,6 +76,8 @@ def main():
                         if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
                         continue
 
+                    warp = perspective.lane_markers(warp)
+
                     warp_copy = warp.copy()
 
                     H, W = warp.shape[:2]  # Height and width in pixels

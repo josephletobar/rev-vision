@@ -4,6 +4,9 @@ from vision.transformers.base_transformer import BaseTransformer
 # from vision.transformers.geometric_transformer import GeometricTransformer
 from vision.transformers.geometric_helper import geometric_transform
 
+from ultralytics import YOLO
+from pathlib import Path
+
 class BirdsEyeTransformer(BaseTransformer):
 
     # needed for perspective transform
@@ -75,6 +78,34 @@ class BirdsEyeTransformer(BaseTransformer):
         # cv2.imshow("Corners Debug ", vis_debug) # optionally show it seperately
 
         return TL, TR, BR, BL
+    
+    def lane_markers(self, frame):
+
+        MODEL_PATH = Path.cwd() / "data" / "yolo_lane_markings" / "weights" / "best.pt"
+        model = YOLO(MODEL_PATH)
+
+        results = model.predict(
+            source=frame,
+            conf=0.25,
+            imgsz=640,
+            save=False
+        )
+
+        for r in results:
+            for box in r.boxes:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                cls = int(box.cls[0])
+                conf = float(box.conf[0])
+
+                color = (0, 255, 0) if cls == 0 else (255, 0, 0)
+                label = f"{'arrow' if cls==0 else 'dot'} {conf:.2f}"
+
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 1)
+                cv2.putText(frame, label, (x1, y1-4),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, color, 1)
+                
+        return frame
+
 
     def transform(self, frame, mask, alpha=1):
         """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
