@@ -5,7 +5,8 @@ import csv
 from vision.trajectory import Trajectory
 trajectory = Trajectory()
 
-def detect_ball(img, preview, track=False, output_path=None, trajectory_filter=None):
+def detect_ball(img, preview, track=False, output_path=None, 
+                trajectory_filter=None, M_rel=None):
 
     if img.ndim == 2:
         img_gray = img
@@ -54,21 +55,27 @@ def detect_ball(img, preview, track=False, output_path=None, trajectory_filter=N
             best_contrast = contrast
             best_kp = kp
 
-    if track:
-        pts = trajectory.all()
-        # Draw all the previous points
-        for i in range(1, len(pts)):
-                    cv2.line(preview, pts[i-1], pts[i], (0, 0, 255), 5)
-
     # Pick only if contrast passes threshold
     if best_kp is not None and best_contrast > 10:  # threshold can be tuned (try 8–15)
+
         x, y = int(best_kp.pt[0]), int(best_kp.pt[1])
+        if M_rel is not None:
+            pt = np.array([x, y, 1.0])
+            pt = M_rel @ pt
+            pt /= pt[2]
+            x, y = int(pt[0]), int(pt[1])
+        
         r = int(best_kp.size / 2)
         cv2.circle(preview, (x, y), r, (255, 0, 0), 2)
 
         if track:
             cv2.circle(preview, (x, y), 3, (0, 0, 255), -1)
             trajectory.push((x, y)) # appends new points into the buffer
+
+            pts = trajectory.all()
+            # Draw all the previous points
+            for i in range(1, len(pts)):
+                        cv2.line(preview, pts[i-1], pts[i], (0, 0, 255), 5)
 
             with open(output_path, "a", newline="") as f:
                 writer = csv.writer(f)

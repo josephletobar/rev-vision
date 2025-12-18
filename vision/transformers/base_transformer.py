@@ -70,21 +70,8 @@ class BaseTransformer:
         angle = np.arctan2(x2 - x1, y2 - y1)
 
         return (x1, y1, x2, y2), angle
-
-    #TODO: implement pitch correction
-    def _stabilize_rotation(self, mask: np.ndarray, vis_debug=None):
-
-        """
-        Stabilize the lane mask by detecting its outer lane lines,
-        estimating the average tilt angle, and rotating the mask to align it vertically.
-
-        Args:
-            mask (np.ndarray): Binary or grayscale lane mask.
-            vis_debug (np.ndarray, optional): Optional image for visualization.
-
-        Returns:
-            np.ndarray: Rotated (stabilized) mask, or None if no valid lines are found.
-        """
+    
+    def _get_lines(self, mask: np.ndarray):
 
         mask = self._ensure_grayscale(mask)
         mask = mask.astype(np.uint8)
@@ -126,9 +113,31 @@ class BaseTransformer:
                 right_lines.append((x1, y1, x2, y2))
             else:
                 left_lines.append((x1, y1, x2, y2))
-            
-        # get averaged lines
+        
+        return left_lines, right_lines, mask_center
 
+    #TODO: implement pitch correction
+    def _stabilize_rotation(self, mask: np.ndarray, vis_debug=None):
+
+        mask = self._ensure_grayscale(mask)
+        mask = mask.astype(np.uint8)
+
+        """
+        Stabilize the lane mask by detecting its outer lane lines,
+        estimating the average tilt angle, and rotating the mask to align it vertically.
+
+        Args:
+            mask (np.ndarray): Binary or grayscale lane mask.
+            vis_debug (np.ndarray, optional): Optional image for visualization.
+
+        Returns:
+            np.ndarray: Rotated (stabilized) mask, or None if no valid lines are found.
+        """
+            
+        # get lines
+        left_lines, right_lines, mask_center = self._get_lines(mask)
+
+        # get averaged lines
         right_result = self._average_lines(right_lines, mask.shape[0])
         left_result = self._average_lines(left_lines, mask.shape[0])
 

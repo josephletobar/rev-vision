@@ -7,6 +7,7 @@ import subprocess
 from models.lane_segmentation.deeplab_predict import deeplab_predict
 from vision.mask_processing import OverlayProcessor, ExtractProcessor
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
+from vision.transformers.geometric_helper import GeometricTransformer
 from vision.ball_detection import detect_ball
 from vision.lane_visual import visual
 from vision.trajectory import Trajectory
@@ -16,6 +17,7 @@ def main():
     overlay = OverlayProcessor()
     extract = ExtractProcessor()
     perspective = BirdsEyeTransformer()
+    geometric = GeometricTransformer()
     filter = Trajectory(buffer_size=5, threshold=120)
 
     # set CSV at the start of each run
@@ -70,19 +72,37 @@ def main():
                         print(f"[main] None frame or extraction before perspective transform in module {__name__}")
                         return
 
-                    warp = perspective.transform(frame, extraction, alpha=0.3) # get a perspective transform
+                    full_warp, M_full = perspective.transform(frame, extraction, alpha=1) # get a perspective transform
+                    partial_warp, M_part = perspective.transform(frame, extraction, alpha=.3) # get a perspective transform
 
-                    if warp is None:
+                    if full_warp is None or partial_warp is None:
                         if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
                         continue
 
-                    warp = perspective.lane_markers(warp)
+                    partial_warp, (avg_left, avg_right) = geometric.transform(partial_warp, partial=True)
+                    full_warp = geometric.transform(full_warp)
 
-                    warp_copy = warp.copy()
+                    M_rel = M_full @ np.linalg.inv(M_part)
+                    
+                    def project_point(x, y, M_rel):
+                        pt = np.array([x, y, 1.0])
+                        pt = M_rel @ pt
+                        pt /= pt[2]
+                        return int(pt[0]), int(pt[1])
+                    
+                    x1, y1 = project_point(avg_right[0], avg_right[1], M_rel)
+                    x2, y2 = project_point(avg_right[2], avg_right[3], M_rel)
+                    cv2.line(full_warp, (x1, y1), (x2, y2), (255, 255, 255), 5)
 
-                    H, W = warp.shape[:2]  # Height and width in pixels
-                    if DEBUG_PIPELINE: print((H, W))
-                    detect_ball(warp, warp, track=True, output_path=TRACKING_OUTPUT, trajectory_filter=filter) # detect ball on the warp, track this one
+                    x1, y1 = project_point(avg_left[0], avg_left[1], M_rel)
+                    x2, y2 = project_point(avg_left[2], avg_left[3], M_rel)
+                    cv2.line(full_warp, (x1, y1), (x2, y2), (255, 255, 255), 5)
+
+                    detect_ball(partial_warp, full_warp, track=True, output_path=TRACKING_OUTPUT, 
+                                trajectory_filter=filter, M_rel=M_rel) # detect ball on the partial warp, track this one
+
+                    # warp_copy = warp.copy()
+
                 except RuntimeError as e:
                     print(e)
                     continue
@@ -93,11 +113,16 @@ def main():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break  # Exit on 'q' key
 
+            # TEST
+            cv2.imshow("TEST", partial_warp)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break  # Exit on 'q' key
+
             if DEBUG_PIPELINE:
                 try:
-                    cv2.imshow("Debug", warp_copy)
-                    height, width = warp_copy.shape[:2]         
-                    warp_copy = cv2.resize(warp_copy, (width, height))
+                    cv2.imshow("Debug", full_warp)
+                    height, width = full_warp.shape[:2]         
+                    full_warp = cv2.resize(full_warp, (width, height))
                     if writer2 is None:
                         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                         writer2 = cv2.VideoWriter(
@@ -106,7 +131,7 @@ def main():
                             30.0,
                             (width, height)
                         )
-                    writer2.write(warp_copy)
+                    writer2.write(full_warp)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         writer2.release()
                         cv2.destroyAllWindows()
