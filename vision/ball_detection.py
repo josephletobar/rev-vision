@@ -59,6 +59,7 @@ def detect_ball(img, preview, track=False, output_path=None,
     if best_kp is not None and best_contrast > 10:  # threshold can be tuned (try 8–15)
 
         x, y = int(best_kp.pt[0]), int(best_kp.pt[1])
+        cv2.circle(img, (x, y), r, (255, 0, 0), 2)
         if M_rel is not None:
             pt = np.array([x, y, 1.0])
             pt = M_rel @ pt
@@ -67,6 +68,7 @@ def detect_ball(img, preview, track=False, output_path=None,
         
         r = int(best_kp.size / 2)
         cv2.circle(preview, (x, y), r, (255, 0, 0), 2)
+        
 
         if track:
             cv2.circle(preview, (x, y), 3, (0, 0, 255), -1)

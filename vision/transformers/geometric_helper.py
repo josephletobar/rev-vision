@@ -112,13 +112,41 @@ class GeometricTransformer(BaseTransformer):
                 frame = cv2.warpPerspective(frame, buffer.last()[0], buffer.last()[1])
 
         return frame
+    
+    def partial_transform(self, frame):
+        out, detections = self._lane_markers(frame)
+        out = self._estimation(out, detections)
+        return out, detections
+
+    def full_transform(self, frame, M_rel, detections):
+        for d in detections:
+            color = (0, 255, 0) if d.label == 'arrow' else (255, 0, 0)
+
+            # top-left
+            p1 = np.array([d.x1, d.y1, 1.0])
+            p1 = M_rel @ p1
+            p1 /= p1[2]
+
+            # bottom-right
+            p2 = np.array([d.x2, d.y2, 1.0])
+            p2 = M_rel @ p2
+            p2 /= p2[2]
+
+            x1, y1 = int(p1[0]), int(p1[1])
+            x2, y2 = int(p2[0]), int(p2[1])
+
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 1)
+            cv2.putText(frame, d.label, (x1, y1 - 4),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.35, color, 1)
+            
+        return frame
         
     
     def transform(self, frame, partial=False):
         out, detections = self._lane_markers(frame)
 
         if partial == True:
-            # out = self._estimation(out, detections)
+            out = self._estimation(out, detections)
 
             left_lines, right_lines, _ = self._get_lines(out)
 
