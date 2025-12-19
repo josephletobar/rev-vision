@@ -65,8 +65,16 @@ def main():
 
             extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
             if extraction is not None:
-                detect_ball(extraction, preview) # detect ball on the extraction
+                result = detect_ball(extraction, preview) # detect ball on the extraction
 
+                cv2.imshow("Lane Overlay", preview)
+                if out:
+                    out.write(preview)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break  # Exit on 'q' key
+
+                # if result == False: continue
+                
                 try: 
                     if frame is None or extraction is None:
                         print(f"[main] None frame or extraction before perspective transform in module {__name__}")
@@ -86,22 +94,6 @@ def main():
 
                     full_warp = geometric.full_transform(full_warp, M_rel, detections)
 
-                    
-
-                    # def project_point(x, y, M_rel):
-                    #     pt = np.array([x, y, 1.0])
-                    #     pt = M_rel @ pt
-                    #     pt /= pt[2]
-                    #     return int(pt[0]), int(pt[1])
-                    
-                    # x1, y1 = project_point(avg_right[0], avg_right[1], M_rel)
-                    # x2, y2 = project_point(avg_right[2], avg_right[3], M_rel)
-                    # cv2.line(full_warp, (x1, y1), (x2, y2), (255, 255, 255), 5)
-
-                    # x1, y1 = project_point(avg_left[0], avg_left[1], M_rel)
-                    # x2, y2 = project_point(avg_left[2], avg_left[3], M_rel)
-                    # cv2.line(full_warp, (x1, y1), (x2, y2), (255, 255, 255), 5)
-
                     detect_ball(partial_warp, full_warp, track=True, output_path=TRACKING_OUTPUT, 
                                 trajectory_filter=filter, M_rel=M_rel) # detect ball on the partial warp, track this one
 
@@ -110,17 +102,12 @@ def main():
                 except RuntimeError as e:
                     print(e)
                     continue
-
-            cv2.imshow("Lane Overlay", preview)
-            if out:
-                out.write(preview)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break  # Exit on 'q' key
-
+       
             # TEST
             cv2.imshow("Partial Warp Processing", partial_warp)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break  # Exit on 'q' key
+ 
 
             if DEBUG_PIPELINE:
                 try:

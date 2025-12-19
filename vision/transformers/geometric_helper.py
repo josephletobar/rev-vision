@@ -123,7 +123,7 @@ class GeometricTransformer(BaseTransformer):
             # top-left
             p1 = np.array([d.x1, d.y1, 1.0])
             p1 = M_rel @ p1
-            p1 /= p1[2]
+            p1 /= p1[2]  
 
             # bottom-right
             p2 = np.array([d.x2, d.y2, 1.0])
@@ -149,37 +149,40 @@ class GeometricTransformer(BaseTransformer):
         else:
             arrows_avg = None
 
-        h, w = frame.shape[:2]
-        w_mid = w//2
-        cv2.line(frame, (0, avg_y), (w - 1, avg_y), (255, 255, 255), 2)
+        try: 
+            h, w = frame.shape[:2]
+            w_mid = w//2
+            cv2.line(frame, (0, avg_y), (w - 1, avg_y), (255, 255, 255), 2)
 
-        cv2.line(frame, (w_mid, avg_y), (w_mid, 0), (255, 255, 255), 2)
-        text = f"{avg_y}"
-        cv2.putText(frame, text, (int(w_mid)+45, int(h//2)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
-        
-        pixels_per_foot = avg_y / 45.0 # 45 feet between arrows and pins
+            cv2.line(frame, (w_mid, avg_y), (w_mid, 0), (255, 255, 255), 2)
+            text = f"{avg_y}"
+            cv2.putText(frame, text, (int(w_mid)+45, int(h//2)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+            
+            pixels_per_foot = avg_y / 45.0 # 45 feet between arrows and pins
 
-        px_arrow_to_end = h - avg_y
-        cv2.line(frame, (w_mid, avg_y), (w_mid, h), (255, 255, 255), 2)
-        text = f"{px_arrow_to_end}"
-        cv2.putText(frame, text, (int(w_mid)+45, int(h-20)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+            px_arrow_to_end = h - avg_y
+            cv2.line(frame, (w_mid, avg_y), (w_mid, h), (255, 255, 255), 2)
+            text = f"{px_arrow_to_end}"
+            cv2.putText(frame, text, (int(w_mid)+45, int(h-20)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
 
-        pixels_to_foul = 15.0 * pixels_per_foot
-        # print(pixels_to_foul)
+            pixels_to_foul = 15.0 * pixels_per_foot
+            # print(pixels_to_foul)
 
-        missing_px = int(max(0, pixels_to_foul - px_arrow_to_end))
+            missing_px = int(max(0, pixels_to_foul - px_arrow_to_end))
 
-        frame = cv2.copyMakeBorder(
-            frame,
-            top=0,
-            bottom=missing_px,
-            left=0,
-            right=0,
-            borderType=cv2.BORDER_CONSTANT,
-            value=(0, 0, 0)
-        )
+            frame = cv2.copyMakeBorder(
+                frame,
+                top=0,
+                bottom=missing_px,
+                left=0,
+                right=0,
+                borderType=cv2.BORDER_CONSTANT,
+                value=(0, 0, 0)
+            )
+        except Exception as e:
+            print(e)
 
         return frame
             

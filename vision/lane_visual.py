@@ -4,7 +4,6 @@ import matplotlib.animation as animation
 from matplotlib.patches import Rectangle, Polygon, Circle
 from utils.config import LANE_H, LANE_W
 
-#TODO: Project points properly w warp
 def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
     # Lane measurement constants (inches)
     LANE_W_IN   = 41.5            # between gutters
@@ -79,18 +78,17 @@ def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
         )
 
 def visual(file_path):
-    # Load points
-    pts = np.genfromtxt(file_path, delimiter=",", names=True)
-    xs, ys = pts["x"], pts["y"]
 
+    plt.ion() # interavtive mode so it can update withotu blocking
     fig, ax = plt.subplots()
-    (line,) = ax.plot([], [], 'b-', lw=2)  # blue dots with connecting line
+    line, = ax.plot([], [], color="blue", linewidth=2)
 
     ax.set_xlim(0, LANE_W)
     ax.set_ylim(0, LANE_H)
     ax.invert_yaxis()
 
     draw_lane(ax)
+    plt.show()
 
     # --- show scale in feet ---
     inch_to_ft = 1 / 12
@@ -111,32 +109,72 @@ def visual(file_path):
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(np.round(np.linspace(lane_length_ft, 0, 7), 1))
 
-    # --- animation setup --- 
-    def init():
-        line.set_data([], [])
-        return (line,)
+    while plt.fignum_exists(fig.number):
+        pts = np.atleast_1d(np.genfromtxt(file_path, delimiter=",", names=True))
+        if len(pts) > 0:
+            line.set_data(pts["x"], pts["y"])
+            ax.relim()
+            ax.autoscale_view()
 
-    def update(frame):
-        line.set_data(xs[:frame], ys[:frame])
-        return (line,)
+        plt.pause(0.05)
 
-    ani = animation.FuncAnimation(
-        fig,
-        update,
-        frames=len(xs),
-        init_func=init,
-        interval=20, # ms
-        blit=False,
-        repeat=False
-    )
+    # pts = np.genfromtxt(file_path, delimiter=",", names=True)
+    # xs, ys = pts["x"], pts["y"]
 
-    def format_coord(x, y):
-        width_boards = np.interp(x, [0, LANE_W], [39, 1])
-        length_feet = np.interp(y, [0, LANE_H], [lane_length_ft, 0])
-        return f"Width: {width_boards:.1f} boards, Length: {length_feet:.1f} ft"
-    ax.format_coord = format_coord
+    # fig, ax = plt.subplots()
+    # (line,) = ax.plot([], [], 'b-', lw=2)  # blue dots with connecting line
 
-    plt.show()
+    # ax.set_xlim(0, LANE_W)
+    # ax.set_ylim(0, LANE_H)
+    # ax.invert_yaxis()
+
+    # draw_lane(ax)
+
+    # # --- show scale in feet ---
+    # inch_to_ft = 1 / 12
+    # ax.set_xlabel("Width (boards)")
+    # ax.set_ylabel("Length (feet)")
+
+    # LANE_W_IN   = 41.5            # between gutters
+    # LANE_L_IN   = 60*12           # foul line to head pin (720")
+
+    # lane_width_ft = LANE_W_IN * inch_to_ft
+    # lane_length_ft = LANE_L_IN * inch_to_ft
+
+    # ax.set_aspect('equal')
+    # x_ticks = np.linspace(0, LANE_W, 5)
+    # y_ticks = np.linspace(0, LANE_H, 7)
+    # ax.set_xticks(x_ticks)
+    # ax.set_xticklabels(np.round(np.linspace(39, 1, 5, dtype=int)))
+    # ax.set_yticks(y_ticks)
+    # ax.set_yticklabels(np.round(np.linspace(lane_length_ft, 0, 7), 1))
+
+    # # --- animation setup --- 
+    # def init():
+    #     line.set_data([], [])
+    #     return (line,)
+
+    # def update(frame):
+    #     line.set_data(xs[:frame], ys[:frame])
+    #     return (line,)
+
+    # ani = animation.FuncAnimation(
+    #     fig,
+    #     update,
+    #     frames=len(xs),
+    #     init_func=init,
+    #     interval=20, # ms
+    #     blit=False,
+    #     repeat=False
+    # )
+
+    # def format_coord(x, y):
+    #     width_boards = np.interp(x, [0, LANE_W], [39, 1])
+    #     length_feet = np.interp(y, [0, LANE_H], [lane_length_ft, 0])
+    #     return f"Width: {width_boards:.1f} boards, Length: {length_feet:.1f} ft"
+    # ax.format_coord = format_coord
+
+    # plt.show()
 
 # python3 -m vision.lane_visual
 if __name__ == "__main__":

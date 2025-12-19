@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import csv
+import os
 
 from vision.trajectory import Trajectory
 trajectory = Trajectory()
@@ -18,7 +19,7 @@ def detect_ball(img, preview, track=False, output_path=None,
     params = cv2.SimpleBlobDetector_Params()
     params.filterByColor = False  # don’t care about brightness
     params.filterByArea = True
-    params.minArea = 75          # adjust to ball size
+    params.minArea = 500          # adjust to ball size
     params.maxArea = 20000
 
     params.filterByCircularity = True
@@ -45,6 +46,7 @@ def detect_ball(img, preview, track=False, output_path=None,
         roi = img_gray[y1:y2, x1:x2]
 
         if roi.size == 0:
+            return False
             continue
 
         # Compute local contrast (stddev of brightness)
@@ -82,8 +84,13 @@ def detect_ball(img, preview, track=False, output_path=None,
             with open(output_path, "a", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow([x, y])
+                f.flush()
+                os.fsync(f.fileno())
 
-        return [x, y]
+        # return [x, y]
+        return True
+    
+    else: return False
 
 # TESTING   
 if __name__ == "__main__":
