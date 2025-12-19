@@ -66,19 +66,13 @@ class GeometricTransformer(BaseTransformer):
         return frame, detections
     
     def _estimation(self, frame, detections):
-
-        arrows_mid = []
         dots_mid = []
 
         for d in detections:
-            if d.label == 'arrow':
-                arrows_mid.append( ( int((d.x1+d.x2)/2),  int((d.y1+d.y2)/2) ))
-            else:
+            if d.label == 'dots':
                 dots_mid.append( ( int((d.x1+d.x2)/2),  int((d.y1+d.y2)/2) ))
             
-        # if arrows_mid: 
-        #     arrows_mid.sort(key=itemgetter(0))
-        #     cv2.line(frame, arrows_mid[0], arrows_mid[-1], (255, 0, 0), 5)
+        
 
         if len(dots_mid) > 1:
             dots_mid.sort(key=itemgetter(0))
@@ -119,7 +113,11 @@ class GeometricTransformer(BaseTransformer):
         return out, detections
 
     def full_transform(self, frame, M_rel, detections):
+
+        arrows_mid = []
+
         for d in detections:
+
             color = (0, 255, 0) if d.label == 'arrow' else (255, 0, 0)
 
             # top-left
@@ -139,33 +137,79 @@ class GeometricTransformer(BaseTransformer):
             cv2.putText(frame, d.label, (x1, y1 - 4),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.35, color, 1)
             
+            if d.label == 'arrow':
+                mx = (x1 + x2) // 2
+                my = (y1 + y2) // 2
+                arrows_mid.append((mx, my))
+
+        if arrows_mid:
+            avg_x = sum(p[0] for p in arrows_mid) // len(arrows_mid)
+            avg_y = sum(p[1] for p in arrows_mid) // len(arrows_mid)
+            arrows_avg = (avg_x, avg_y)
+        else:
+            arrows_avg = None
+
+        h, w = frame.shape[:2]
+        w_mid = w//2
+        cv2.line(frame, (0, avg_y), (w - 1, avg_y), (255, 255, 255), 2)
+
+        cv2.line(frame, (w_mid, avg_y), (w_mid, 0), (255, 255, 255), 2)
+        text = f"{avg_y}"
+        cv2.putText(frame, text, (int(w_mid)+45, int(h//2)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+        
+        pixels_per_foot = avg_y / 45.0 # 45 feet between arrows and pins
+
+        px_arrow_to_end = h - avg_y
+        cv2.line(frame, (w_mid, avg_y), (w_mid, h), (255, 255, 255), 2)
+        text = f"{px_arrow_to_end}"
+        cv2.putText(frame, text, (int(w_mid)+45, int(h-20)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+
+        pixels_to_foul = 15.0 * pixels_per_foot
+        # print(pixels_to_foul)
+
+        missing_px = int(max(0, pixels_to_foul - px_arrow_to_end))
+
+        frame = cv2.copyMakeBorder(
+            frame,
+            top=0,
+            bottom=missing_px,
+            left=0,
+            right=0,
+            borderType=cv2.BORDER_CONSTANT,
+            value=(0, 0, 0)
+        )
+
         return frame
+            
+
         
     
-    def transform(self, frame, partial=False):
-        out, detections = self._lane_markers(frame)
+    # def transform(self, frame, partial=False):
+    #     out, detections = self._lane_markers(frame)
 
-        if partial == True:
-            out = self._estimation(out, detections)
+    #     if partial == True:
+    #         out = self._estimation(out, detections)
 
-            left_lines, right_lines, _ = self._get_lines(out)
+    #         left_lines, right_lines, _ = self._get_lines(out)
 
-            for x1, y1, x2, y2 in left_lines:
-                cv2.line(out, (x1, y1), (x2, y2), (255, 0, 0), 3)
+    #         for x1, y1, x2, y2 in left_lines:
+    #             cv2.line(out, (x1, y1), (x2, y2), (255, 0, 0), 3)
 
-            for x1, y1, x2, y2 in right_lines:
-                cv2.line(out, (x1, y1), (x2, y2), (0, 0, 255), 3)
+    #         for x1, y1, x2, y2 in right_lines:
+    #             cv2.line(out, (x1, y1), (x2, y2), (0, 0, 255), 3)
 
-            right_result = self._average_lines(right_lines, out.shape[0])
-            left_result = self._average_lines(left_lines, out.shape[0])
+    #         right_result = self._average_lines(right_lines, out.shape[0])
+    #         left_result = self._average_lines(left_lines, out.shape[0])
 
-            if right_result is None or left_result is None:
-                return out
+    #         if right_result is None or left_result is None:
+    #             return out
 
-            avg_right, right_angle = right_result
-            avg_left, left_angle = left_result
+    #         avg_right, right_angle = right_result
+    #         avg_left, left_angle = left_result
 
     
-            return out, (avg_left, avg_right)
+    #         return out, (avg_left, avg_right)
         
-        return out
+    #     return out

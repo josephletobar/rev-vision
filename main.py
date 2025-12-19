@@ -153,8 +153,7 @@ def main():
         cv2.destroyAllWindows()
 
     # Run plotting script
-    if not DEBUG_PIPELINE: # just show it if not debugging
-        visual(TRACKING_OUTPUT)
+    visual(TRACKING_OUTPUT)
 
 # python3 main.py --input test_videos/bowling.mp4
 if __name__ == "__main__":

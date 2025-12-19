@@ -56,7 +56,7 @@ def detect_ball(img, preview, track=False, output_path=None,
             best_kp = kp
 
     # Pick only if contrast passes threshold
-    if best_kp is not None and best_contrast > 10:  # threshold can be tuned (try 8–15)
+    if best_kp is not None and best_contrast > 15:  # threshold can be tuned (try 8–15)
 
         x, y = int(best_kp.pt[0]), int(best_kp.pt[1])
         cv2.circle(img, (x, y), r, (255, 0, 0), 2)

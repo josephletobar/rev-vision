@@ -138,7 +138,7 @@ def visual(file_path):
 
     plt.show()
 
-# python3 -m utils.cv_utils.lane_visual
+# python3 -m vision.lane_visual
 if __name__ == "__main__":
     # visual("examples/points_run4.csv")
     visual("outputs/points.csv")
