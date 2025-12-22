@@ -13,7 +13,7 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 
 <p align="center">
   <img src="examples/output2.gif" alt="Output Video" width="45%" />
-  <img src="examples/lanevis.gif" alt="Lane Visualization" width="45%" />
+  <img src="examples/lanetrack.gif" alt="Lane Visualization" width="45%" />
 </p>
 
 ## Project Status and Future Work
