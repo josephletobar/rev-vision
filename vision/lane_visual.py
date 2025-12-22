@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.patches import Rectangle, Polygon, Circle
 from utils.config import LANE_H, LANE_W
+import cv2
+import argparse
+
+
+
+_video = None
+_video_size = None
 
 def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
     # Lane measurement constants (inches)
@@ -77,7 +84,9 @@ def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
             zorder=1
         )
 
+
 def visual(file_path):
+    global _video, _video_size
 
     plt.ion() # interavtive mode so it can update withotu blocking
     fig, ax = plt.subplots()
@@ -109,6 +118,20 @@ def visual(file_path):
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(np.round(np.linspace(lane_length_ft, 0, 7), 1))
 
+    # render once so canvas size is valid
+    fig.canvas.draw()
+
+    # init video writer only if output is requested
+    if args.output and _video is None:
+        w, h = fig.canvas.get_width_height()
+        _video_size = (w, h)
+        _video = cv2.VideoWriter(
+            args.output,
+            cv2.VideoWriter_fourcc(*"mp4v"),
+            20,
+            (w, h)
+        )
+
     while plt.fignum_exists(fig.number):
         pts = np.atleast_1d(np.genfromtxt(file_path, delimiter=",", names=True))
         if len(pts) > 0:
@@ -116,67 +139,26 @@ def visual(file_path):
             ax.relim()
             ax.autoscale_view()
 
+        fig.canvas.draw()
+
+        if args.output:
+            frame_rgba = np.asarray(fig.canvas.buffer_rgba())
+            frame_bgr = cv2.cvtColor(frame_rgba[:, :, :3], cv2.COLOR_RGB2BGR)
+            _video.write(frame_bgr)
+
         plt.pause(0.05)
 
-    # pts = np.genfromtxt(file_path, delimiter=",", names=True)
-    # xs, ys = pts["x"], pts["y"]
+    # ---- WHEN YOU ARE DONE (once) ----
+    if args.output and _video is not None:
+        _video.release()
+        _video = None
 
-    # fig, ax = plt.subplots()
-    # (line,) = ax.plot([], [], 'b-', lw=2)  # blue dots with connecting line
-
-    # ax.set_xlim(0, LANE_W)
-    # ax.set_ylim(0, LANE_H)
-    # ax.invert_yaxis()
-
-    # draw_lane(ax)
-
-    # # --- show scale in feet ---
-    # inch_to_ft = 1 / 12
-    # ax.set_xlabel("Width (boards)")
-    # ax.set_ylabel("Length (feet)")
-
-    # LANE_W_IN   = 41.5            # between gutters
-    # LANE_L_IN   = 60*12           # foul line to head pin (720")
-
-    # lane_width_ft = LANE_W_IN * inch_to_ft
-    # lane_length_ft = LANE_L_IN * inch_to_ft
-
-    # ax.set_aspect('equal')
-    # x_ticks = np.linspace(0, LANE_W, 5)
-    # y_ticks = np.linspace(0, LANE_H, 7)
-    # ax.set_xticks(x_ticks)
-    # ax.set_xticklabels(np.round(np.linspace(39, 1, 5, dtype=int)))
-    # ax.set_yticks(y_ticks)
-    # ax.set_yticklabels(np.round(np.linspace(lane_length_ft, 0, 7), 1))
-
-    # # --- animation setup --- 
-    # def init():
-    #     line.set_data([], [])
-    #     return (line,)
-
-    # def update(frame):
-    #     line.set_data(xs[:frame], ys[:frame])
-    #     return (line,)
-
-    # ani = animation.FuncAnimation(
-    #     fig,
-    #     update,
-    #     frames=len(xs),
-    #     init_func=init,
-    #     interval=20, # ms
-    #     blit=False,
-    #     repeat=False
-    # )
-
-    # def format_coord(x, y):
-    #     width_boards = np.interp(x, [0, LANE_W], [39, 1])
-    #     length_feet = np.interp(y, [0, LANE_H], [lane_length_ft, 0])
-    #     return f"Width: {width_boards:.1f} boards, Length: {length_feet:.1f} ft"
-    # ax.format_coord = format_coord
-
-    # plt.show()
 
 # python3 -m vision.lane_visual
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=str, help="Path to save output video (optional)")
+    args = parser.parse_args()
+    
     # visual("examples/points_run4.csv")
     visual("outputs/points.csv")

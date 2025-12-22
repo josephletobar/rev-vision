@@ -139,8 +139,8 @@ def main():
             out.release()
         cv2.destroyAllWindows()
 
-    # Run plotting script
-    visual(TRACKING_OUTPUT)
+    # # Run plotting script
+    # visual(TRACKING_OUTPUT)
 
 # python3 main.py --input test_videos/bowling.mp4
 if __name__ == "__main__":
