@@ -3,6 +3,7 @@ import matplotlib.pylab as plt
 import cv2
 import csv
 import numpy as np
+from ultralytics import YOLO
 import subprocess
 from models.lane_segmentation.deeplab_predict import deeplab_predict
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
@@ -19,6 +20,8 @@ def main():
     perspective = BirdsEyeTransformer()
     geometric = GeometricTransformer()
     filter = Trajectory(buffer_size=5, threshold=120)
+
+    ball_model = YOLO(f"data/weights/best_ball.pt")
 
     # set CSV at the start of each run
     TRACKING_OUTPUT = "outputs/points.csv"
@@ -59,20 +62,32 @@ def main():
                 print(f"[main] None frame read from capture in module {__name__}")
                 return
             
+            results = ball_model(frame, conf=0.4, imgsz=640) # run inference
+            display = results[0].plot() 
+
+            if results[0].boxes is None or len(results[0].boxes) == 0:
+                # Show result
+                cv2.imshow("Lane Display", display)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    writer2.release()
+                    cv2.destroyAllWindows()
+                    break
+                continue
+            
             # Run model on current frame to get its prediction mask
             _, pred_mask = deeplab_predict(frame, weights) 
-            preview = overlay.apply(pred_mask, frame) 
+            display = overlay.apply(pred_mask, display) 
 
-            cv2.imshow("Lane Overlay", preview)
+            cv2.imshow("Lane Display", display)
             if out:
-                out.write(preview)
+                out.write(display)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break  # Exit on 'q' key
 
             extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
             if extraction is not None:
             
-                result = detect_ball(extraction, preview) # detect ball on the extraction
+                result = detect_ball(extraction, display) # detect ball on the extraction
 
                 if result == False: continue # no need for further processing if no ball
                 

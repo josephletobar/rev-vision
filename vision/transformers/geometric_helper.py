@@ -25,7 +25,7 @@ class Detection:
 class GeometricTransformer(BaseTransformer):
 
     def _lane_markers(self, frame):
-        MODEL_PATH = Path.cwd() / "data" / "yolo_lane_markings" / "weights" / "best.pt"
+        MODEL_PATH = Path.cwd() / "data" / "weights" / "best_markings.pt"
         model = YOLO(MODEL_PATH)
 
         results = model.predict(
