@@ -116,7 +116,6 @@ class BaseTransformer:
         
         return left_lines, right_lines, mask_center
 
-    #TODO: implement pitch correction
     def _stabilize_rotation(self, mask: np.ndarray, vis_debug=None):
 
         mask = self._ensure_grayscale(mask)

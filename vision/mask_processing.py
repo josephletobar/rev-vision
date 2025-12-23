@@ -1,6 +1,12 @@
 import cv2
 import numpy as np
 
+# Expects a mask
+def extraction_validator(mask):
+
+    mask[mask > 127] = 255
+    return mask
+
 # Validate and normalize mask for further processing
 class BaseMaskProcessor:
     def __init__(self, min_fraction=0.01, bin_thresh=0.5, resize_to_frame=True,

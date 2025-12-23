@@ -5,7 +5,7 @@ import csv
 import numpy as np
 import subprocess
 from models.lane_segmentation.deeplab_predict import deeplab_predict
-from vision.mask_processing import OverlayProcessor, ExtractProcessor
+from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from vision.transformers.geometric_helper import GeometricTransformer
 from vision.ball_detection import detect_ball
@@ -63,17 +63,18 @@ def main():
             _, pred_mask = deeplab_predict(frame, weights) 
             preview = overlay.apply(pred_mask, frame) 
 
+            cv2.imshow("Lane Overlay", preview)
+            if out:
+                out.write(preview)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break  # Exit on 'q' key
+
             extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
             if extraction is not None:
+            
                 result = detect_ball(extraction, preview) # detect ball on the extraction
 
-                cv2.imshow("Lane Overlay", preview)
-                if out:
-                    out.write(preview)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break  # Exit on 'q' key
-
-                # if result == False: continue
+                if result == False: continue # no need for further processing if no ball
                 
                 try: 
                     if frame is None or extraction is None:
@@ -103,13 +104,15 @@ def main():
                     print(e)
                     continue
        
-            # TEST
-            cv2.imshow("Partial Warp Processing", partial_warp)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break  # Exit on 'q' key
- 
-
+        
+            
             if DEBUG_PIPELINE:
+                # TEST
+
+                cv2.imshow("Debug 2", colored)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break  # Exit on 'q' key
+
                 try:
                     cv2.imshow("Debug", full_warp)
                     height, width = full_warp.shape[:2]         
@@ -139,8 +142,6 @@ def main():
             out.release()
         cv2.destroyAllWindows()
 
-    # # Run plotting script
-    # visual(TRACKING_OUTPUT)
 
 # python3 main.py --input test_videos/bowling.mp4
 if __name__ == "__main__":
