@@ -109,7 +109,7 @@ def main():
             if DEBUG_PIPELINE:
                 # TEST
 
-                cv2.imshow("Debug 2", colored)
+                cv2.imshow("Debug 2", extraction)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break  # Exit on 'q' key
 
