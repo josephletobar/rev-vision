@@ -32,4 +32,4 @@ def extract_frames(video_path, output_dir, step=30):
         cap.release()
 
 ROOT = Path().resolve().parent
-extract_frames(f"outputs", "data/perspective_frames", step=2)
+extract_frames(f"test_videos", "data/raw_frames", step=10)
