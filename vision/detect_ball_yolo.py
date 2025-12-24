@@ -9,6 +9,24 @@ logging.getLogger("ultralytics").setLevel(logging.ERROR)
 
 ball_model = YOLO(f"data/weights/best_ball.pt")
 
+
+class ExponentialMovingAvg():
+    def __init__(self, alpha=0.75):
+        self.prev_point = None
+        self.alpha = alpha
+    def update(self, curr_point: tuple):
+        if self.prev_point is None:
+            self.prev_point = curr_point
+            return curr_point
+
+        smoothed_x = (self.alpha * self.prev_point[0]) + (1-self.alpha)*curr_point[0]
+        smoothed_y = (self.alpha * self.prev_point[1]) + (1-self.alpha)*curr_point[1]
+        smoothed_point = (int(smoothed_x), int(smoothed_y))
+
+        self.prev_point = smoothed_point
+
+        return smoothed_point
+
 def find_ball(frame, display):
 
     ball_results = ball_model(frame, conf=0.4, imgsz=640) # run inference
@@ -32,10 +50,16 @@ def find_ball(frame, display):
 
     return int(ball_cx), int(ball_cy)
 
+ema = ExponentialMovingAvg()
+
 def draw_path(ball_cx, ball_cy, trajectory, display, write_path=None):
 
-    cv2.circle(display, (ball_cx, ball_cy), 3, (0, 0, 255), -1)
-    trajectory.push((ball_cx, ball_cy)) # appends new points into the buffer
+    midpoint = (ball_cx, ball_cy)
+    cv2.circle(display, midpoint, 3, (0, 0, 255), -1) # draw a circle around the midpoint
+
+    smoothed_point = ema.update(midpoint)
+
+    trajectory.push(smoothed_point) # appends new points into the buffer
 
     pts = trajectory.all()
     # Draw all the previous points

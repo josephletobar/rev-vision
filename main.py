@@ -138,8 +138,6 @@ def main():
         if out:
             out.release()
         cv2.destroyAllWindows()
-        post_visual("outputs/points.csv")
-
 
 # python3 main.py --input test_videos/bowling.mp4
 if __name__ == "__main__":

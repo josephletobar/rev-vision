@@ -10,7 +10,7 @@ import argparse
 
 _video = None
 _video_size = None
-
+ 
 def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
     # Lane measurement constants (inches)
     LANE_W_IN   = 41.5            # between gutters
@@ -90,7 +90,7 @@ def live_visual(file_path):
 
     plt.ion() # interavtive mode so it can update withotu blocking
     fig, ax = plt.subplots()
-    line, = ax.plot([], [], color="blue", linewidth=2)
+    line, = ax.plot([], [], color="blue", linewidth=5)
 
     ax.set_xlim(0, LANE_W)
     ax.set_ylim(0, LANE_H)
@@ -221,5 +221,5 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, help="Path to save output video (optional)")
     args = parser.parse_args()
     
-    # visual("examples/points_run4.csv")
     live_visual("outputs/points.csv")
+
