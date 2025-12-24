@@ -99,7 +99,7 @@ def main():
                 pt_warped = cv2.perspectiveTransform(pt, M_full)
                 x_w, y_w = pt_warped[0, 0]
 
-                draw_path(int(x_w), int(y_w), ball_trajectory, full_warp)
+                draw_path(int(x_w), int(y_w), ball_trajectory, full_warp, "outputs/points.csv")
                                 
             if DEBUG_PIPELINE:
                 # TEST

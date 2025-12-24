@@ -42,6 +42,6 @@ def draw_path(ball_cx, ball_cy, trajectory, display, write_path=None):
     if write_path:
         with open(write_path, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([ball_cx, ball_cy])
+            writer.writerow([ball_cx, ball_cy-25]) # - constant to y position to adjust for bottom of lane cut off (temporary)
             f.flush()
             os.fsync(f.fileno())
