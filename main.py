@@ -10,7 +10,7 @@ from vision.geometric_validation import validate
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from vision.transformers.geometric_helper import GeometricTransformer
-from vision.lane_visual import visual
+from vision.lane_visual import post_visual
 from vision.trajectory import Trajectory
 from utils.config import DEBUG_PIPELINE
 
@@ -87,7 +87,7 @@ def main():
             if extraction is not None:
 
                 if not validate(extraction):
-                    print("INVALID MASK")
+                    # print("INVALID MASK")
                     continue 
             
                 full_warp, M_full = perspective.transform(frame, extraction, alpha=1.3) # get a perspective transform
@@ -111,7 +111,6 @@ def main():
                 cv2.imshow("Debug", (extraction))
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break  # Exit on 'q' key
-
 
                 #     cv2.imshow("Debug 2", full_warp)
                 #     height, width = full_warp.shape[:2]         
@@ -139,6 +138,7 @@ def main():
         if out:
             out.release()
         cv2.destroyAllWindows()
+        post_visual("outputs/points.csv")
 
 
 # python3 main.py --input test_videos/bowling.mp4
