@@ -6,6 +6,7 @@ import numpy as np
 import subprocess
 from models.lane_segmentation.deeplab_predict import deeplab_predict
 from vision.detect_ball_yolo import find_ball, draw_path
+from vision.geometric_validation import validate
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from vision.transformers.geometric_helper import GeometricTransformer
@@ -84,9 +85,12 @@ def main():
 
             extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
             if extraction is not None:
+
+                if not validate(extraction):
+                    print("INVALID MASK")
+                    continue 
             
                 full_warp, M_full = perspective.transform(frame, extraction, alpha=1.3) # get a perspective transform
-
 
                 if full_warp is None:
                     if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
@@ -104,9 +108,10 @@ def main():
             if DEBUG_PIPELINE:
                 # TEST
 
-                cv2.imshow("Debug", full_warp)
+                cv2.imshow("Debug", (extraction))
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break  # Exit on 'q' key
+
 
                 #     cv2.imshow("Debug 2", full_warp)
                 #     height, width = full_warp.shape[:2]         

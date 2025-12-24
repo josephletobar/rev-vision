@@ -4,6 +4,9 @@ import csv
 import os
 from vision.trajectory import Trajectory
 
+import logging
+logging.getLogger("ultralytics").setLevel(logging.ERROR)
+
 ball_model = YOLO(f"data/weights/best_ball.pt")
 
 def find_ball(frame, display):

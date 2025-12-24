@@ -4,6 +4,7 @@ from datetime import datetime
 from time import sleep
 
 OUTPUT = True
+INPUT_VIDEO = "test_videos/bowling3.mp4"
 
 if OUTPUT:
     ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # milliseconds
@@ -16,7 +17,7 @@ p1 = subprocess.Popen(
 )
 
 p2 = subprocess.Popen(
-    ["python3", "main.py", "--input", "test_videos/bowling3.mp4"]
+    ["python3", "main.py", "--input", INPUT_VIDEO]
     + (["--output", f"{output_dr}/output.mp4"] if OUTPUT else [])
 )
 

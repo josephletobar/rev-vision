@@ -9,6 +9,9 @@ from ultralytics import YOLO
 from pathlib import Path
 from operator import itemgetter
 
+import logging
+logging.getLogger("ultralytics").setLevel(logging.ERROR)
+
 buffer = Trajectory()
 
 from dataclasses import dataclass
