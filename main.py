@@ -3,13 +3,12 @@ import matplotlib.pylab as plt
 import cv2
 import csv
 import numpy as np
-from ultralytics import YOLO
 import subprocess
 from models.lane_segmentation.deeplab_predict import deeplab_predict
+from vision.detect_ball_yolo import find_ball, draw_path
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from vision.transformers.geometric_helper import GeometricTransformer
-from vision.ball_detection import detect_ball
 from vision.lane_visual import visual
 from vision.trajectory import Trajectory
 from utils.config import DEBUG_PIPELINE
@@ -18,10 +17,10 @@ def main():
     overlay = OverlayProcessor()
     extract = ExtractProcessor()
     perspective = BirdsEyeTransformer()
-    geometric = GeometricTransformer()
     filter = Trajectory(buffer_size=5, threshold=120)
+    geometric = GeometricTransformer()
 
-    ball_model = YOLO(f"data/weights/best_ball.pt")
+    ball_trajectory = Trajectory()
 
     # set CSV at the start of each run
     TRACKING_OUTPUT = "outputs/points.csv"
@@ -61,19 +60,18 @@ def main():
             if frame is None:
                 print(f"[main] None frame read from capture in module {__name__}")
                 return
-            
-            results = ball_model(frame, conf=0.4, imgsz=640) # run inference
-            display = results[0].plot() 
+            display = frame
 
-            if results[0].boxes is None or len(results[0].boxes) == 0:
-                # Show result
-                cv2.imshow("Lane Display", display)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    writer2.release()
-                    cv2.destroyAllWindows()
-                    break
+            found_ball_point = find_ball(frame, display)
+
+            if not found_ball_point: # no need for further processing
+                # cv2.imshow("Lane Display", display)
+                # if cv2.waitKey(1) & 0xFF == ord('q'):
+                #     writer2.release()
+                #     cv2.destroyAllWindows()
+                #     break
                 continue
-            
+                    
             # Run model on current frame to get its prediction mask
             _, pred_mask = deeplab_predict(frame, weights) 
             display = overlay.apply(pred_mask, display) 
@@ -87,66 +85,46 @@ def main():
             extraction = extract.apply(pred_mask, frame) # extract the mask from the frame
             if extraction is not None:
             
-                result = detect_ball(extraction, display) # detect ball on the extraction
+                full_warp, M_full = perspective.transform(frame, extraction, alpha=1.3) # get a perspective transform
 
-                if result == False: continue # no need for further processing if no ball
-                
-                try: 
-                    if frame is None or extraction is None:
-                        print(f"[main] None frame or extraction before perspective transform in module {__name__}")
-                        return
 
-                    full_warp, M_full = perspective.transform(frame, extraction, alpha=1.4) # get a perspective transform
-                    partial_warp, M_part = perspective.transform(frame, extraction, alpha=0.3) # get a perspective transform
-
-                    if full_warp is None or partial_warp is None:
-                        if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
-                        continue
-                        
-                    # transform matrix relationship between full and partial
-                    M_rel = M_full @ np.linalg.inv(M_part)
-
-                    partial_warp, detections = geometric.partial_transform(partial_warp)
-
-                    full_warp = geometric.full_transform(full_warp, M_rel, detections)
-
-                    detect_ball(partial_warp, full_warp, track=True, output_path=TRACKING_OUTPUT, 
-                                trajectory_filter=filter, M_rel=M_rel) # detect ball on the partial warp, track this one
-
-                    # warp_copy = warp.copy()
-
-                except RuntimeError as e:
-                    print(e)
+                if full_warp is None:
+                    if DEBUG_PIPELINE: print("Skipping frame: no valid lane mask")
                     continue
-       
-        
-            
+
+                detections = geometric._lane_markers(full_warp)
+
+                # convert detected point to perspective transformed
+                pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
+                pt_warped = cv2.perspectiveTransform(pt, M_full)
+                x_w, y_w = pt_warped[0, 0]
+
+                draw_path(int(x_w), int(y_w), ball_trajectory, full_warp)
+                                
             if DEBUG_PIPELINE:
                 # TEST
 
-                cv2.imshow("Debug 2", extraction)
+                cv2.imshow("Debug", full_warp)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break  # Exit on 'q' key
 
-                try:
-                    cv2.imshow("Debug", full_warp)
-                    height, width = full_warp.shape[:2]         
-                    full_warp = cv2.resize(full_warp, (width, height))
-                    if writer2 is None:
-                        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                        writer2 = cv2.VideoWriter(
-                            "outputs/segmented_mask8.mp4",
-                            fourcc,
-                            30.0,
-                            (width, height)
-                        )
-                    writer2.write(full_warp)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        writer2.release()
-                        cv2.destroyAllWindows()
-                        break
-                except:
-                    pass
+                #     cv2.imshow("Debug 2", full_warp)
+                #     height, width = full_warp.shape[:2]         
+                #     full_warp = cv2.resize(full_warp, (width, height))
+                #     if writer2 is None:
+                #         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                #         writer2 = cv2.VideoWriter(
+                #             "outputs/segmented_mask8.mp4",
+                #             fourcc,
+                #             30.0,
+                #             (width, height)
+                #         )
+                #     writer2.write(full_warp)
+                #     if cv2.waitKey(1) & 0xFF == ord('q'):
+                #         writer2.release()
+                #         cv2.destroyAllWindows()
+                #         break
+           
 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Cleaning up gracefully...")

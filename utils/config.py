@@ -3,5 +3,5 @@ LANE_W = 400   # width  (across lane boards)
 LANE_H = 900   # height (lane length)
 
 # Debug Flags
-DEBUG_PIPELINE = False # high-level debug in main
+DEBUG_PIPELINE = True # high-level debug in main
 DEBUG_BIRDS_EYE = False # debug birds-eye module

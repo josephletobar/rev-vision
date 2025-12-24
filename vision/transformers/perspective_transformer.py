@@ -87,11 +87,12 @@ class BirdsEyeTransformer(BaseTransformer):
         if self.debug:
             vis_debug = mask.copy()
 
-        stabilized = self._stabilize_rotation(mask, vis_debug if self.debug else None)
+        stabilized, R = self._stabilize_rotation(mask, vis_debug if self.debug else None)
         if stabilized is None:
             msg = "[BirdsEyeTransformer.transform] Stabilization returned None"
             print(msg)
             raise RuntimeError(msg)
+        R3 = np.vstack([R, [0, 0, 1]]) # the matrix used to stabilize rotation
         
         # # geo = self.geometric._transform(stabilized)
         # geometric_transform(self, stabilized)
@@ -145,5 +146,9 @@ class BirdsEyeTransformer(BaseTransformer):
                 del self._writer
                 cv2.destroyWindow("Debug Visual")
 
-        return warp, M
+        # Combine stabilization (R3) and perspective (M) into a single transform
+        # so all points and images are warped in one consistent coordinate system
+        M_total = M @ R3
+
+        return warp, M_total
 
