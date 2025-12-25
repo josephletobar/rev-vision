@@ -77,78 +77,83 @@ class BirdsEyeTransformer(BaseTransformer):
 
 
     def transform(self, frame, mask, alpha=1):
-        """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
 
-        if frame is None or mask is None:
-            msg = f"[BirdsEyeTransformer.transform] None frame or mask in module {__name__}"
-            print(msg)
-            raise RuntimeError(msg)
+        try:
+            """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
 
-        if self.debug:
-            vis_debug = mask.copy()
+            if frame is None or mask is None:
+                msg = f"[BirdsEyeTransformer.transform] None frame or mask in module {__name__}"
+                print(msg)
+                raise RuntimeError(msg)
 
-        stabilized, R = self._stabilize_rotation(mask, vis_debug if self.debug else None)
-        if stabilized is None:
-            msg = "[BirdsEyeTransformer.transform] Stabilization returned None"
-            print(msg)
-            raise RuntimeError(msg)
-        R3 = np.vstack([R, [0, 0, 1]]) # the matrix used to stabilize rotation
-        
-        # # geo = self.geometric._transform(stabilized)
-        # geometric_transform(self, stabilized)
-                
-        corners = self._get_mask_corners(stabilized, vis_debug if self.debug else None)
-        if corners is None:
-            msg = "[BirdsEyeTransformer.transform] Corner detection returned None"
-            print(msg)
-            raise RuntimeError(msg)
-        
-        src = np.float32(corners)  # TL, TR, BR, BL
-        Wout, Hout = self.out_size
+            if self.debug:
+                vis_debug = mask.copy()
 
-        dst = np.float32([
-            [0, 0],
-            [Wout - 1, 0],
-            [Wout - 1, Hout - 1],
-            [0, Hout - 1],
-        ])
+            stabilized, R = self._stabilize_rotation(mask, vis_debug if self.debug else None)
+            if stabilized is None:
+                msg = "[BirdsEyeTransformer.transform] Stabilization returned None"
+                print(msg)
+                raise RuntimeError(msg)
+            R3 = np.vstack([R, [0, 0, 1]]) # the matrix used to stabilize rotation
+            
+            # # geo = self.geometric._transform(stabilized)
+            # geometric_transform(self, stabilized)
+                    
+            corners = self._get_mask_corners(stabilized, vis_debug if self.debug else None)
+            if corners is None:
+                msg = "[BirdsEyeTransformer.transform] Corner detection returned None"
+                print(msg)
+                raise RuntimeError(msg)
+            
+            src = np.float32(corners)  # TL, TR, BR, BL
+            Wout, Hout = self.out_size
 
-        mid_x = (dst[0, 0] + dst[1, 0]) / 2.0
-        dst[0, 0] = mid_x - alpha * (mid_x - dst[0, 0])
-        dst[1, 0] = mid_x + alpha * (dst[1, 0] - mid_x)
+            dst = np.float32([
+                [0, 0],
+                [Wout - 1, 0],
+                [Wout - 1, Hout - 1],
+                [0, Hout - 1],
+            ])
 
-        M = cv2.getPerspectiveTransform(src, dst)
+            mid_x = (dst[0, 0] + dst[1, 0]) / 2.0
+            dst[0, 0] = mid_x - alpha * (mid_x - dst[0, 0])
+            dst[1, 0] = mid_x + alpha * (dst[1, 0] - mid_x)
 
-        # make sure stabalized is BGR (warpPerspective needs it)
-        if len(stabilized.shape) == 2:
-            stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
+            M = cv2.getPerspectiveTransform(src, dst)
 
-        warp = (cv2.warpPerspective(stabilized, M, (Wout, Hout)))
+            # make sure stabalized is BGR (warpPerspective needs it)
+            if len(stabilized.shape) == 2:
+                stabilized = cv2.cvtColor(stabilized, cv2.COLOR_GRAY2BGR)
 
-        ## debug
+            warp = (cv2.warpPerspective(stabilized, M, (Wout, Hout)))
 
-        if self.debug:
-            cv2.imshow("Debug Visual", vis_debug)
-            cv2.waitKey(1)
+            ## debug
 
-            # Lazy init: only create the writer once
-            if not hasattr(self, "_writer"):
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                h, w = vis_debug.shape[:2]
-                self._writer = cv2.VideoWriter("outputs/debug_visual.mp4", fourcc, 30.0, (w, h))
+            if self.debug:
+                cv2.imshow("Debug Visual", vis_debug)
+                cv2.waitKey(1)
 
-            # Write current debug frame
-            self._writer.write(vis_debug)
+                # Lazy init: only create the writer once
+                if not hasattr(self, "_writer"):
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    h, w = vis_debug.shape[:2]
+                    self._writer = cv2.VideoWriter("outputs/debug_visual.mp4", fourcc, 30.0, (w, h))
 
-            # If ESC is pressed, release writer and close
-            if cv2.waitKey(1) == 27:
-                self._writer.release()
-                del self._writer
-                cv2.destroyWindow("Debug Visual")
+                # Write current debug frame
+                self._writer.write(vis_debug)
 
-        # Combine stabilization (R3) and perspective (M) into a single transform
-        # so all points and images are warped in one consistent coordinate system
-        M_total = M @ R3
+                # If ESC is pressed, release writer and close
+                if cv2.waitKey(1) == 27:
+                    self._writer.release()
+                    del self._writer
+                    cv2.destroyWindow("Debug Visual")
 
-        return warp, M_total
+            # Combine stabilization (R3) and perspective (M) into a single transform
+            # so all points and images are warped in one consistent coordinate system
+            M_total = M @ R3
+
+            return warp, M_total
+        except Exception as e:
+            print(e)
+            return None, None
 

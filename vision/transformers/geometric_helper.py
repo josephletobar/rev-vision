@@ -4,13 +4,14 @@ from vision.transformers.base_transformer import BaseTransformer
 from utils.config import LANE_W, LANE_H
 from math import atan2, degrees
 from vision.trajectory import Trajectory
-
+from utils import config
 from ultralytics import YOLO
 from pathlib import Path
 from operator import itemgetter
 
 import logging
-logging.getLogger("ultralytics").setLevel(logging.ERROR)
+if not config.DEBUG_PIPELINE:
+    logging.getLogger("ultralytics").setLevel(logging.ERROR)
 
 buffer = Trajectory()
 

@@ -4,7 +4,7 @@ from datetime import datetime
 from time import sleep
 
 OUTPUT = True
-INPUT_VIDEO = "test_videos/bowling3.mp4"
+INPUT_VIDEO = "test_videos/bowling8.mov"
 
 if OUTPUT:
     ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # milliseconds

@@ -3,9 +3,12 @@ import cv2
 import csv
 import os
 from vision.trajectory import Trajectory
+import torch
+from utils import config
 
 import logging
-logging.getLogger("ultralytics").setLevel(logging.ERROR)
+if not config.DEBUG_PIPELINE:
+    logging.getLogger("ultralytics").setLevel(logging.ERROR)
 
 ball_model = YOLO(f"data/weights/best_ball.pt")
 
@@ -18,7 +21,7 @@ class ExponentialMovingAvg():
         if self.prev_point is None:
             self.prev_point = curr_point
             return curr_point
-
+        
         smoothed_x = (self.alpha * self.prev_point[0]) + (1-self.alpha)*curr_point[0]
         smoothed_y = (self.alpha * self.prev_point[1]) + (1-self.alpha)*curr_point[1]
         smoothed_point = (int(smoothed_x), int(smoothed_y))
@@ -29,7 +32,7 @@ class ExponentialMovingAvg():
 
 def find_ball(frame, display):
 
-    ball_results = ball_model(frame, conf=0.4, imgsz=640) # run inference
+    with torch.no_grad(): ball_results = ball_model(frame, conf=0.4, imgsz=640) # run inference
             
     if ball_results[0].boxes is None or len(ball_results[0].boxes) == 0:
 
