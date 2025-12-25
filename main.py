@@ -63,10 +63,6 @@ def main():
             if not ret: break
             if frame is None: continue
             display = frame
-
-            # find the ball
-            found_ball_point = find_ball(frame.copy(), display)
-            if not found_ball_point: continue # no need for further processing
                     
             # predict lane
             _, pred_mask = deeplab_predict(frame, weights) 
@@ -76,6 +72,10 @@ def main():
             extraction = extract.apply(pred_mask, frame) 
             if extraction is None: continue
             if not validate(extraction): continue # validate the mask  
+
+            # find the ball
+            found_ball_point = find_ball(extraction.copy(), display)
+            if not found_ball_point: continue # no need for further processing
 
             # display segmented lane and ball
             create_display("Lane Display", display)
