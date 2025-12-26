@@ -55,7 +55,7 @@ def find_ball(frame, display):
 
 ema = ExponentialMovingAvg()
 
-def draw_path(ball_cx, ball_cy, trajectory, display, write_path=None):
+def draw_path(ball_cx, ball_cy, trajectory, display, t_sec, write_path=None):
 
     midpoint = (ball_cx, ball_cy)
     cv2.circle(display, midpoint, 3, (0, 0, 255), -1) # draw a circle around the midpoint
@@ -72,6 +72,6 @@ def draw_path(ball_cx, ball_cy, trajectory, display, write_path=None):
     if write_path:
         with open(write_path, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([ball_cx, ball_cy-25]) # - constant to y position to adjust for bottom of lane cut off (temporary)
+            writer.writerow([ball_cx, ball_cy-25, t_sec]) # - constant to y position to adjust for bottom of lane cut off (temporary)
             f.flush()
             os.fsync(f.fileno())

@@ -12,7 +12,7 @@ from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from vision.transformers.geometric_helper import GeometricTransformer
 from vision.lane_visual import post_visual
 from vision.trajectory import Trajectory
-from utils.config import DEBUG_PIPELINE
+from utils.config import DEBUG_PIPELINE, STEP, VIDEO_FPS
 
 def create_display(name, display, out=False):
     cv2.imshow(name, display)
@@ -22,18 +22,18 @@ def create_display(name, display, out=False):
         return  # Exit on 'q' key  
 
 def main():
-
     # create instances
     overlay = OverlayProcessor()
     extract = ExtractProcessor()
     perspective = BirdsEyeTransformer()
     ball_trajectory = Trajectory()
+    geometric = GeometricTransformer()
 
     # set CSV at the start of each run
     TRACKING_OUTPUT = "outputs/points.csv"
     with open(TRACKING_OUTPUT, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["x", "y"])  # header
+        writer.writerow(["x", "y", "time_stamp"])  # header
 
     # parse arguments
     parser = argparse.ArgumentParser(description="Lane Assist Video Processing")
@@ -57,32 +57,39 @@ def main():
         out = cv2.VideoWriter(args.output, fourcc, fps, (width, height))
 
     try:
+        frame_idx = 0
         while(cap.isOpened()):
             # read the frame
             ret, frame = cap.read()
             if not ret: break
             if frame is None: continue
-            display = frame
+
+            t_sec = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+
+            display = frame.copy()
                     
             # predict lane
-            _, pred_mask = deeplab_predict(frame, weights) 
-            display = overlay.apply(pred_mask, display) 
+            _, pred_mask = deeplab_predict(frame.copy(), weights) 
+            display = overlay.apply(pred_mask.copy(), display) 
 
             # extract the lane
-            extraction = extract.apply(pred_mask, frame) 
+            extraction = extract.apply(pred_mask.copy(), frame.copy()) 
             if extraction is None: continue
-            if not validate(extraction): continue # validate the mask  
+            if not validate(extraction.copy()): continue # validate the mask  
 
             # find the ball
             found_ball_point = find_ball(extraction.copy(), display)
-            if not found_ball_point: continue # no need for further processing
+            if not found_ball_point: 
+                create_display("Lane Display", display) # show only segmented lane
+                continue # no need for further processing
 
             # display segmented lane and ball
             create_display("Lane Display", display)
 
             # see birds-eye view
-            full_warp, M_full = perspective.transform(frame, extraction, alpha=1.3) 
+            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.3) 
             if full_warp is None or M_full is None: continue
+            # create_display("Lane Warp", full_warp) # show it for debugging
 
             # detections = geometric._lane_markers(full_warp)
 
@@ -90,9 +97,7 @@ def main():
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
             pt_warped = cv2.perspectiveTransform(pt, M_full)
             x_w, y_w = pt_warped[0, 0]
-
-            # draw path
-            draw_path(int(x_w), int(y_w), ball_trajectory, full_warp, "outputs/points.csv")                    
+            draw_path(int(x_w), int(y_w), ball_trajectory, full_warp, t_sec, "outputs/points.csv")  
 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Cleaning up gracefully...")

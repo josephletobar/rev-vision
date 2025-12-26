@@ -118,7 +118,7 @@ class BaseTransformer:
 
     def _stabilize_rotation(self, mask: np.ndarray, vis_debug=None):
 
-        mask = self._ensure_grayscale(mask)
+        # mask = self._ensure_grayscale(mask)
         mask = mask.astype(np.uint8)
 
         """

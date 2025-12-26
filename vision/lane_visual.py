@@ -2,14 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.patches import Rectangle, Polygon, Circle
-from utils.config import LANE_H, LANE_W
+from utils.config import LANE_H, LANE_W, STEP, VIDEO_FPS
 import cv2
 import argparse
-
-
+import math
 
 _video = None
 _video_size = None
+
+def calculate_speed(t1, t2, distance_ft=60.0):
+    ty = abs(t2 - t1) 
+
+    mph = (distance_ft/ty) * (3600/5280)
+    return mph
  
 def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
     # Lane measurement constants (inches)
@@ -132,10 +137,24 @@ def live_visual(file_path):
             (w, h)
         )
 
+    prev_point = None
+
     while plt.fignum_exists(fig.number):
         pts = np.atleast_1d(np.genfromtxt(file_path, delimiter=",", names=True))
         if len(pts) > 0:
-            line.set_data(pts["x"], pts["y"])
+
+            line.set_data(pts["x"], pts["y"]) # set the data
+
+            # # continous speed
+            # curr_point = pts["y"][-1]
+            # curr_idx = pts["frame_idx"][-1]
+            # if prev_point is not None and curr_point != prev_point and prev_idx is not None and curr_idx != prev_idx:
+            #     dt = (curr_idx - prev_idx) / VIDEO_FPS
+            #     mph = calculate_speed(prev_point, curr_point, dt)
+            #     print(mph)
+            # prev_point = curr_point
+            # prev_idx = curr_idx
+
             ax.relim()
             ax.autoscale_view()
 
@@ -158,8 +177,15 @@ def post_visual(file_path):
     pts = np.genfromtxt(file_path, delimiter=",", names=True)
     xs, ys = pts["x"], pts["y"]
 
+    t1 = pts["time_stamp"][0] 
+    t2 = pts["time_stamp"][-1] 
+
+    distance_ft = abs(ys[-1] - ys[0]) / LANE_H * 60.0
+
+    avg_speed = calculate_speed(t1, t2, distance_ft)
+
     fig, ax = plt.subplots()
-    (line,) = ax.plot([], [], 'b-', lw=2)  # blue dots with connecting line
+    (line,) = ax.plot([], [], 'b-', lw=5)  # blue dots with connecting line
 
     ax.set_xlim(0, LANE_W)
     ax.set_ylim(0, LANE_H)
@@ -186,6 +212,14 @@ def post_visual(file_path):
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(np.round(np.linspace(lane_length_ft, 0, 7), 1))
 
+    fig.text(
+        0.5, 0.96,
+        f"Average Speed: {avg_speed:.1f} mph",
+        ha="center",
+        va="top",
+        fontsize=12
+    )
+
     # --- animation setup --- 
     def init():
         line.set_data([], [])
@@ -194,6 +228,7 @@ def post_visual(file_path):
     def update(frame):
         line.set_data(xs[:frame], ys[:frame])
         return (line,)
+        
 
     ani = animation.FuncAnimation(
         fig,
@@ -218,8 +253,9 @@ def post_visual(file_path):
 # python3 -m vision.lane_visual
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--input", type=str, help="Path to read points")
     parser.add_argument("--output", type=str, help="Path to save output video (optional)")
     args = parser.parse_args()
     
-    live_visual("outputs/points.csv")
+    live_visual(args.input)
 
