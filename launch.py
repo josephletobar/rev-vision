@@ -2,11 +2,12 @@ import subprocess
 import os
 from datetime import datetime
 from time import sleep
+from utils.config import CSV_READ
 from vision.lane_visual import post_visual
 
 OUTPUT = True
 INPUT_VIDEO = "test_videos/bowling3.mp4"
-CSV_READ = "outputs/points.csv"
+
 
 if OUTPUT:
     ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # milliseconds
@@ -15,11 +16,13 @@ if OUTPUT:
 
 p1 = subprocess.Popen(
     ["python3", "main.py", "--input", INPUT_VIDEO]
-    + (["--output", f"{output_dr}/output.mp4"] if OUTPUT else [])
+    + (["--output", output_dr] if OUTPUT else [])
 )
 
+sleep(2)
+
 p2 = subprocess.Popen(
-    ["python3", "-m", "vision.lane_visual", "--input", CSV_READ]
+    ["python3", "-m", "vision.lane_visual"]
     + (["--output", f"{output_dr}/lane_visual.mp4"] if OUTPUT else [])
 )
 

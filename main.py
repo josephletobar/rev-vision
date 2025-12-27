@@ -4,8 +4,10 @@ import cv2
 import csv
 import numpy as np
 import subprocess
+import socket
+import json
 from models.lane_segmentation.deeplab_predict import deeplab_predict
-from vision.detect_ball_yolo import find_ball, draw_path
+from vision.detect_ball_yolo import find_ball, draw_path, save_points_csv
 from vision.geometric_validation import validate
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
@@ -21,6 +23,7 @@ def create_display(name, display, out=False):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         return  # Exit on 'q' key  
 
+
 def main():
     # create instances
     overlay = OverlayProcessor()
@@ -28,6 +31,12 @@ def main():
     perspective = BirdsEyeTransformer()
     ball_trajectory = Trajectory()
     geometric = GeometricTransformer()
+
+    # set socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(("127.0.0.1", 5000))
+    sock.listen(1)
+    conn, _ = sock.accept()
 
     # set CSV at the start of each run
     TRACKING_OUTPUT = "outputs/points.csv"
@@ -38,7 +47,7 @@ def main():
     # parse arguments
     parser = argparse.ArgumentParser(description="Lane Assist Video Processing")
     parser.add_argument("--input", type=str, required=True, help="Path to video file")
-    parser.add_argument("--output", type=str, help="Path to save output video (optional)")
+    parser.add_argument("--output", type=str, help="Path to save outputs (optional)")
     args = parser.parse_args()
 
     # load weights
@@ -57,7 +66,6 @@ def main():
         out = cv2.VideoWriter(args.output, fourcc, fps, (width, height))
 
     try:
-        frame_idx = 0
         while(cap.isOpened()):
             # read the frame
             ret, frame = cap.read()
@@ -97,7 +105,20 @@ def main():
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
             pt_warped = cv2.perspectiveTransform(pt, M_full)
             x_w, y_w = pt_warped[0, 0]
-            draw_path(int(x_w), int(y_w), ball_trajectory, full_warp, t_sec, "outputs/points.csv")  
+            y_w-25 # constant to increase y
+
+            draw_path(int(x_w), int(y_w), ball_trajectory, full_warp)  
+
+            save_points_csv("outputs", int(x_w), int(y_w), t_sec) 
+            save_points_csv(args.output, int(x_w), int(y_w), t_sec)
+            
+
+            # send the data 
+            msg = [float(x_w), float(y_w)]
+            try:
+                conn.sendall((json.dumps(msg) + "\n").encode())
+            except (BrokenPipeError, ConnectionResetError):
+                break
 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Cleaning up gracefully...")
@@ -107,6 +128,13 @@ def main():
         if out:
             out.release()
         cv2.destroyAllWindows()
+
+        try:
+            conn.close()
+            sock.close()
+        except Exception:
+            pass
+
         print("Done")
 
 # python3 main.py --input test_videos/bowling.mp4

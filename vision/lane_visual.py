@@ -6,6 +6,9 @@ from utils.config import LANE_H, LANE_W, STEP, VIDEO_FPS
 import cv2
 import argparse
 import math
+import socket
+import json
+import time
 
 _video = None
 _video_size = None
@@ -90,7 +93,16 @@ def draw_lane(ax, lane_width_px=LANE_W, lane_height_px=LANE_H):
         )
 
 
-def live_visual(file_path):
+def live_visual():
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    while True:
+        try:
+            sock.connect(("127.0.0.1", 5000))
+            break          # exit retry loop ONCE connected
+        except ConnectionRefusedError:
+            time.sleep(0.1)
+
     global _video, _video_size
 
     plt.ion() # interavtive mode so it can update withotu blocking
@@ -137,26 +149,18 @@ def live_visual(file_path):
             (w, h)
         )
 
-    prev_point = None
 
-    while plt.fignum_exists(fig.number):
-        pts = np.atleast_1d(np.genfromtxt(file_path, delimiter=",", names=True))
-        if len(pts) > 0:
+    xs, ys = [], []
+    # continously get data from socket
+    for msg in sock.makefile():
+        x, y = json.loads(msg)
+        xs.append(x)
+        ys.append(y)
 
-            line.set_data(pts["x"], pts["y"]) # set the data
+        line.set_data(xs, ys)
 
-            # # continous speed
-            # curr_point = pts["y"][-1]
-            # curr_idx = pts["frame_idx"][-1]
-            # if prev_point is not None and curr_point != prev_point and prev_idx is not None and curr_idx != prev_idx:
-            #     dt = (curr_idx - prev_idx) / VIDEO_FPS
-            #     mph = calculate_speed(prev_point, curr_point, dt)
-            #     print(mph)
-            # prev_point = curr_point
-            # prev_idx = curr_idx
-
-            ax.relim()
-            ax.autoscale_view()
+        ax.relim()
+        ax.autoscale_view()
 
         fig.canvas.draw()
 
@@ -172,7 +176,8 @@ def live_visual(file_path):
         _video.release()
         _video = None
 
-def post_visual(file_path):
+def post_visual(file_path=None):
+
     # Load points
     pts = np.genfromtxt(file_path, delimiter=",", names=True)
     xs, ys = pts["x"], pts["y"]
@@ -253,9 +258,8 @@ def post_visual(file_path):
 # python3 -m vision.lane_visual
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, help="Path to read points")
     parser.add_argument("--output", type=str, help="Path to save output video (optional)")
     args = parser.parse_args()
     
-    live_visual(args.input)
+    live_visual()
 
