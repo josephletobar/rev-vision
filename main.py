@@ -9,7 +9,7 @@ import json
 from models.lane_segmentation.deeplab_predict import deeplab_predict
 from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
 from vision.geometric_validation import validate
-from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
+from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator, extend_mask_up
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from archive.geometric_helper import GeometricTransformer
 from vision.lane_visual import post_visual
@@ -82,12 +82,18 @@ def main():
                     
             # predict lane
             _, pred_mask = deeplab_predict(frame.copy(), weights) 
-            display = overlay.apply(pred_mask.copy(), display) 
+            if pred_mask is None: continue
+            pred_mask = extend_mask_up(pred_mask.copy(), px=7) # extend for better visibility
+            display = overlay.apply(pred_mask.copy(), display) # overlay mask on frame
+
+            # extended_mask = extend_mask_up(pred_mask.copy(), px=50) # for later processing, visible pins
+            # create_display("Extended Mask", extended_mask)
 
             # extract the lane
             extraction = extract.apply(pred_mask.copy(), frame.copy()) 
             if extraction is None: continue
             if not validate(extraction.copy()): continue # validate the mask  
+            # create_display("Lane Extraction", extraction.copy())
 
             # find the ball
             found_ball_point = find_ball(extraction.copy(), display)
@@ -99,8 +105,9 @@ def main():
             create_display("Lane Display", display)
 
             # see birds-eye view
-            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.3) 
+            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.4) 
             if full_warp is None or M_full is None: continue
+            # create_display("Birds Eye View", full_warp)
 
             # convert detected point to perspective transformed point
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)

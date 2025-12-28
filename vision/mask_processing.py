@@ -7,6 +7,16 @@ def extraction_validator(mask):
     mask[mask > 127] = 255
     return mask
 
+def extend_mask_up(mask, px):
+    mask = (mask > 0).astype(np.uint8) * 255
+
+    h, w = mask.shape[:2]
+    out = mask.copy()
+    out[0:h-px] |= mask[px:h]
+    return out
+
+
+
 # Validate and normalize mask for further processing
 class BaseMaskProcessor:
     def __init__(self, min_fraction=0.01, bin_thresh=0.5, resize_to_frame=True,
