@@ -19,7 +19,7 @@ p1 = subprocess.Popen(
     + (["--output", output_dr] if OUTPUT else [])
 )
 
-sleep(2)
+sleep(5)
 
 p2 = subprocess.Popen(
     ["python3", "-m", "vision.lane_visual"]
@@ -33,6 +33,7 @@ try:
             break
         sleep(0.1)
 
+    sleep(3)
     post_visual(CSV_READ)
     
 except KeyboardInterrupt:
@@ -44,6 +45,7 @@ except KeyboardInterrupt:
         except Exception:
             pass
     
+    sleep(3)
     post_visual(CSV_READ)
 
     os._exit(0)  # hard exit launcher

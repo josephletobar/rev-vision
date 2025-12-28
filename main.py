@@ -7,7 +7,7 @@ import subprocess
 import socket
 import json
 from models.lane_segmentation.deeplab_predict import deeplab_predict
-from vision.detect_ball_yolo import find_ball, draw_path, save_points_csv
+from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
 from vision.geometric_validation import validate
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
@@ -30,7 +30,6 @@ def main():
     extract = ExtractProcessor()
     perspective = BirdsEyeTransformer()
     ball_trajectory = Trajectory()
-    geometric = GeometricTransformer()
 
     # set socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -66,11 +65,15 @@ def main():
         out = cv2.VideoWriter(args.output, fourcc, fps, (width, height))
 
     try:
+        frame_idx = 0
         while(cap.isOpened()):
             # read the frame
             ret, frame = cap.read()
             if not ret: break
             if frame is None: continue
+
+            frame_idx += 1
+            if frame_idx != 1 and frame_idx % STEP != 0: continue
 
             t_sec = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
 
@@ -97,24 +100,20 @@ def main():
             # see birds-eye view
             full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.3) 
             if full_warp is None or M_full is None: continue
-            # create_display("Lane Warp", full_warp) # show it for debugging
-
-            # detections = geometric._lane_markers(full_warp)
 
             # convert detected point to perspective transformed point
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
             pt_warped = cv2.perspectiveTransform(pt, M_full)
             x_w, y_w = pt_warped[0, 0]
-            y_w-25 # constant to increase y
+            y_w = y_w-25 # constant to increase y
 
-            draw_path(int(x_w), int(y_w), ball_trajectory, full_warp)  
+            x_smooth, y_smooth = draw_path_smooth(int(x_w), int(y_w), ball_trajectory, full_warp)  
 
-            save_points_csv("outputs", int(x_w), int(y_w), t_sec) 
-            save_points_csv(args.output, int(x_w), int(y_w), t_sec)
+            save_points_csv("outputs", int(x_smooth), int(y_smooth), t_sec) 
+            save_points_csv(args.output, int(x_smooth), int(y_smooth), t_sec)
             
-
             # send the data 
-            msg = [float(x_w), float(y_w)]
+            msg = [float(x_smooth), float(y_smooth)]
             try:
                 conn.sendall((json.dumps(msg) + "\n").encode())
             except (BrokenPipeError, ConnectionResetError):

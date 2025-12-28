@@ -14,7 +14,7 @@ ball_model = YOLO(f"data/weights/best_ball.pt")
 
 
 class ExponentialMovingAvg():
-    def __init__(self, alpha=0.75):
+    def __init__(self, alpha=0.8):
         self.prev_point = None
         self.alpha = alpha
     def update(self, curr_point: tuple):
@@ -55,7 +55,7 @@ def find_ball(frame, display):
 
 ema = ExponentialMovingAvg()
 
-def draw_path(ball_cx, ball_cy, trajectory, display):
+def draw_path_smooth(ball_cx, ball_cy, trajectory, display):
 
     midpoint = (ball_cx, ball_cy)
     cv2.circle(display, midpoint, 3, (0, 0, 255), -1) # draw a circle around the midpoint
@@ -69,12 +69,18 @@ def draw_path(ball_cx, ball_cy, trajectory, display):
     for i in range(1, len(pts)):
         cv2.line(display, pts[i-1], pts[i], (0, 0, 255), 5)
     
+    return smoothed_point
 
 def save_points_csv(write_dir, ball_cx, ball_cy, t_sec):
-
     write_path = f"{write_dir}/points.csv"
+    file_exists = os.path.exists(write_path)
+
     with open(write_path, "a", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([ball_cx, ball_cy, t_sec]) # - constant to y position to adjust for bottom of lane cut off (temporary)
+
+        if not file_exists:
+            writer.writerow(["x", "y", "time_stamp"])
+
+        writer.writerow([ball_cx, ball_cy, t_sec])
         f.flush()
         os.fsync(f.fileno())

@@ -176,7 +176,7 @@ def live_visual():
         _video.release()
         _video = None
 
-def post_visual(file_path=None):
+def post_visual(file_path):
 
     # Load points
     pts = np.genfromtxt(file_path, delimiter=",", names=True)
