@@ -9,7 +9,10 @@ from .deeplab_model import get_deeplab_model
 # Load model 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-print(f"Running on device: {device}")
+if torch.cuda.is_available():
+    print(f"[Lane Segmentation] CUDA active: {torch.cuda.get_device_name(0)}")
+else:
+    print("[Lane Segmentation] CPU only")
 
 def load_model(weights):
     model = get_deeplab_model(device=device)  # initialize DeepLab model

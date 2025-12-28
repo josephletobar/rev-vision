@@ -10,7 +10,13 @@ import logging
 if not config.DEBUG_PIPELINE:
     logging.getLogger("ultralytics").setLevel(logging.ERROR)
 
-ball_model = YOLO(f"data/weights/best_ball.pt")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+ball_model = YOLO("data/weights/best_ball.pt").to(device)
+
+if torch.cuda.is_available():
+    print(f"[YOLO] CUDA active: {torch.cuda.get_device_name(0)}")
+else:
+    print("[YOLO] CPU only")
 
 
 class ExponentialMovingAvg():

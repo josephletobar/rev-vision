@@ -11,12 +11,13 @@ from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
 from vision.geometric_validation import validate
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
-from vision.transformers.geometric_helper import GeometricTransformer
+from archive.geometric_helper import GeometricTransformer
 from vision.lane_visual import post_visual
 from vision.trajectory import Trajectory
 from utils.config import DEBUG_PIPELINE, STEP, VIDEO_FPS
 
 def create_display(name, display, out=False):
+    cv2.namedWindow(name, cv2.WINDOW_NORMAL)
     cv2.imshow(name, display)
     if out:
         out.write(display)
