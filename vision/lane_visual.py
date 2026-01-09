@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.patches import Rectangle, Polygon, Circle
-from utils.config import LANE_H, LANE_W, STEP, VIDEO_FPS
+from config import LANE_H, LANE_W, STEP, VIDEO_FPS
 import cv2
 import argparse
 import math

@@ -14,7 +14,7 @@ from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from archive.geometric_helper import GeometricTransformer
 from vision.lane_visual import post_visual
 from vision.trajectory import Trajectory
-from utils.config import DEBUG_PIPELINE, STEP, VIDEO_FPS
+from config import DEBUG_PIPELINE, STEP, VIDEO_FPS
 
 def create_display(name, display, out=False):
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
@@ -50,8 +50,6 @@ def main():
     parser.add_argument("--output", type=str, help="Path to save outputs (optional)")
     args = parser.parse_args()
 
-    # load weights
-    weights = "data/weights/lane_deeplab_model_2.pth" 
 
     # video processing
     cap = cv2.VideoCapture(args.input)
@@ -81,9 +79,9 @@ def main():
             display = frame.copy()
                     
             # predict lane
-            _, pred_mask = deeplab_predict(frame.copy(), weights) 
+            _, pred_mask = deeplab_predict(frame.copy()) 
             if pred_mask is None: continue
-            pred_mask = extend_mask_up(pred_mask.copy(), px=7) # extend for better visibility
+            pred_mask = extend_mask_up(pred_mask.copy(), px=2) # extend for better visibility
             display = overlay.apply(pred_mask.copy(), display) # overlay mask on frame
 
             # extended_mask = extend_mask_up(pred_mask.copy(), px=50) # for later processing, visible pins
@@ -107,13 +105,13 @@ def main():
             # see birds-eye view
             full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.4) 
             if full_warp is None or M_full is None: continue
-            # create_display("Birds Eye View", full_warp)
+            create_display("Birds Eye View", full_warp)
 
             # convert detected point to perspective transformed point
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
             pt_warped = cv2.perspectiveTransform(pt, M_full)
             x_w, y_w = pt_warped[0, 0]
-            y_w = y_w-25 # constant to increase y
+            y_w = y_w-45 # constant to increase y
 
             x_smooth, y_smooth = draw_path_smooth(int(x_w), int(y_w), ball_trajectory, full_warp)  
 

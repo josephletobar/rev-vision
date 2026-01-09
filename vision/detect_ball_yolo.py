@@ -4,14 +4,14 @@ import csv
 import os
 from vision.trajectory import Trajectory
 import torch
-from utils import config
+import config
 
 import logging
 if not config.DEBUG_PIPELINE:
     logging.getLogger("ultralytics").setLevel(logging.ERROR)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-ball_model = YOLO("data/weights/best_ball_3.pt").to(device)
+ball_model = YOLO(config.BALL_MODEL).to(device)
 
 if torch.cuda.is_available():
     print(f"[YOLO] CUDA active: {torch.cuda.get_device_name(0)}")

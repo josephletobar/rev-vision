@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from utils.config import LANE_W, LANE_H, DEBUG_BIRDS_EYE
+from config import LANE_W, LANE_H, DEBUG_BIRDS_EYE
 
 class BaseTransformer:
 

@@ -5,6 +5,7 @@ from PIL import Image
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
 from .deeplab_model import get_deeplab_model 
+import config
 
 # Load model 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -28,12 +29,12 @@ transform = T.Compose([
 ])
 
 # Predict function
-def deeplab_predict(input_data, weights):
+def deeplab_predict(input_data):
     if input_data is None:
         print(f"[deeplab_predict] None input_data in module {__name__}")
         return None, None
 
-    model = load_model(weights)
+    model = load_model(config.LANE_MODEL)
 
     if isinstance(input_data, str):  # filepath
         image = Image.open(input_data).convert("RGB")

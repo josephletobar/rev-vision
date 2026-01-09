@@ -1,4 +1,4 @@
-from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator
+from vision.mask_processing import OverlayProcessor, ExtractProcessor, extend_mask_up, extraction_validator
 from vision.geometric_validation import validate
 from models.lane_segmentation.deeplab_predict import deeplab_predict
 overlay = OverlayProcessor()
@@ -9,8 +9,6 @@ import cv2
 weights = "data/weights/lane_deeplab_model_2.pth" 
 
 PATH = "data/extracted_frames"
-
-
 
 def main():
 
@@ -38,6 +36,8 @@ def main():
 
         # predict lane
         _, pred_mask = deeplab_predict(img, weights) 
+        if pred_mask is None: continue
+        pred_mask = extend_mask_up(pred_mask.copy(), px=7) # extend for better visibility
 
         # extract the lane
         extraction = extract.apply(pred_mask, img) 
@@ -47,7 +47,7 @@ def main():
         #     cv2.destroyAllWindows()
         #     return
 
-        OUTPUT_DIR = "data/ball_detection/ball_img_extracted_json"
+        OUTPUT_DIR = "data/ball_detection/ball_img_extracted_json_2"
         os.makedirs(OUTPUT_DIR, exist_ok=True)
 
         out_path = os.path.join(OUTPUT_DIR, file)

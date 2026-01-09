@@ -2,11 +2,11 @@ import subprocess
 import os
 from datetime import datetime
 from time import sleep
-from utils.config import CSV_READ
+from config import CSV_READ
 from vision.lane_visual import post_visual
 
 OUTPUT = True
-INPUT_VIDEO = "test_videos/bowling8.mov"
+INPUT_VIDEO = "test_videos/bowling3.mp4"
 
 
 if OUTPUT:

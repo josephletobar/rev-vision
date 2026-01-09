@@ -11,3 +11,7 @@ LANE_H = 900   # height (lane length)
 # Debug Flags
 DEBUG_PIPELINE = False # high-level debug in main
 DEBUG_BIRDS_EYE = False # debug birds-eye module
+
+# Model paths
+BALL_MODEL = "data/weights/best_ball_7.pt"  # YOLOv8 ball detection model path
+LANE_MODEL = "data/weights/lane_deeplab_model_2.pth"  # Lane segmentation model path
