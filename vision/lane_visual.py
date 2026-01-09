@@ -9,9 +9,7 @@ import math
 import socket
 import json
 import time
-
-_video = None
-_video_size = None
+import os
 
 def calculate_speed(t1, t2, distance_ft=60.0):
     ty = abs(t2 - t1) 
@@ -138,18 +136,6 @@ def live_visual():
     # render once so canvas size is valid
     fig.canvas.draw()
 
-    # init video writer only if output is requested
-    if args.output and _video is None:
-        w, h = fig.canvas.get_width_height()
-        _video_size = (w, h)
-        _video = cv2.VideoWriter(
-            args.output,
-            cv2.VideoWriter_fourcc(*"mp4v"),
-            20,
-            (w, h)
-        )
-
-
     xs, ys = [], []
     # continously get data from socket
     for msg in sock.makefile():
@@ -164,19 +150,9 @@ def live_visual():
 
         fig.canvas.draw()
 
-        if args.output:
-            frame_rgba = np.asarray(fig.canvas.buffer_rgba())
-            frame_bgr = cv2.cvtColor(frame_rgba[:, :, :3], cv2.COLOR_RGB2BGR)
-            _video.write(frame_bgr)
-
         plt.pause(0.05)
 
-    # ---- WHEN YOU ARE DONE (once) ----
-    if args.output and _video is not None:
-        _video.release()
-        _video = None
-
-def post_visual(file_path):
+def post_visual(file_path, output_path=None):
 
     # Load points
     pts = np.genfromtxt(file_path, delimiter=",", names=True)
@@ -251,15 +227,19 @@ def post_visual(file_path):
         return f"Width: {width_boards:.1f} boards, Length: {length_feet:.1f} ft"
     ax.format_coord = format_coord
 
+    if output_path is not None:
+        from matplotlib.animation import FFMpegWriter
+        writer = FFMpegWriter(fps=50, bitrate=1800)
+        ani.save(output_path, writer=writer)
+
     plt.show()
-
-
 
 # python3 -m vision.lane_visual
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=str, help="Path to save output video (optional)")
     args = parser.parse_args()
+    os.makedirs(os.path.dirname(args.output), exist_ok=True)
     
     live_visual()
 

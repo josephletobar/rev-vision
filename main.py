@@ -61,7 +61,7 @@ def main():
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = cap.get(cv2.CAP_PROP_FPS)
-        out = cv2.VideoWriter(args.output, fourcc, fps, (width, height))
+        out = cv2.VideoWriter(f"{args.output}/replay.mp4", fourcc, fps, (width, height))
 
     try:
         frame_idx = 0
@@ -96,12 +96,11 @@ def main():
             # find the ball
             found_ball_point = find_ball(extraction.copy(), display)
             if not found_ball_point: 
-                create_display("Lane Display", display) # show only segmented lane
+                create_display("Lane Display", display, out=out) # show only segmented lane
                 continue # no need for further processing
 
             # display segmented lane and ball
-            create_display("Lane Display", display)
-
+            create_display("Lane Display", display, out=out)
             # see birds-eye view
             full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.4) 
             if full_warp is None or M_full is None: continue
@@ -111,7 +110,7 @@ def main():
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
             pt_warped = cv2.perspectiveTransform(pt, M_full)
             x_w, y_w = pt_warped[0, 0]
-            y_w = y_w-45 # constant to increase y
+            y_w = y_w-60 # constant to increase y
 
             x_smooth, y_smooth = draw_path_smooth(int(x_w), int(y_w), ball_trajectory, full_warp)  
 

@@ -6,7 +6,7 @@ from config import CSV_READ
 from vision.lane_visual import post_visual
 
 OUTPUT = True
-INPUT_VIDEO = "test_videos/bowling3.mp4"
+INPUT_VIDEO = "test_videos/bowling6.mov"
 
 
 if OUTPUT:
@@ -34,7 +34,7 @@ try:
         sleep(0.1)
 
     sleep(3)
-    post_visual(CSV_READ)
+    post_visual(CSV_READ, output_path=f"{output_dr}/lane_visual.mp4" if OUTPUT else None)
     
 except KeyboardInterrupt:
     print("\nFORCE KILLING SUBPROCESSES")

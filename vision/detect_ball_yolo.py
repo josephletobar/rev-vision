@@ -20,7 +20,7 @@ else:
 
 
 class ExponentialMovingAvg():
-    def __init__(self, alpha=0.8):
+    def __init__(self, alpha=0.9):
         self.prev_point = None
         self.alpha = alpha
     def update(self, curr_point: tuple):
