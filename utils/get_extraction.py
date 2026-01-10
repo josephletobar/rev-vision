@@ -6,8 +6,6 @@ extract = ExtractProcessor()
 import os
 import cv2
 
-weights = "data/weights/lane_deeplab_model_2.pth" 
-
 PATH = "data/extracted_frames"
 
 def main():
@@ -35,9 +33,9 @@ def main():
         img = cv2.imread(file_path)
 
         # predict lane
-        _, pred_mask = deeplab_predict(img, weights) 
+        _, pred_mask = deeplab_predict(img) 
         if pred_mask is None: continue
-        pred_mask = extend_mask_up(pred_mask.copy(), px=7) # extend for better visibility
+        pred_mask = extend_mask_up(pred_mask.copy(), px=10) # extend for better visibility
 
         # extract the lane
         extraction = extract.apply(pred_mask, img) 
@@ -47,7 +45,7 @@ def main():
         #     cv2.destroyAllWindows()
         #     return
 
-        OUTPUT_DIR = "data/ball_detection/ball_img_extracted_json_2"
+        OUTPUT_DIR = "data/ball_detection/labelme_dir/lane_ends_extracted"
         os.makedirs(OUTPUT_DIR, exist_ok=True)
 
         out_path = os.path.join(OUTPUT_DIR, file)

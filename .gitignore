@@ -1,5 +1,6 @@
 *.pth
 data/
+weights/
 .DS_Store
 __pycache__/
 *.pyc

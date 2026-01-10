@@ -81,7 +81,7 @@ def main():
             # predict lane
             _, pred_mask = deeplab_predict(frame.copy()) 
             if pred_mask is None: continue
-            pred_mask = extend_mask_up(pred_mask.copy(), px=2) # extend for better visibility
+            pred_mask = extend_mask_up(pred_mask.copy(), px=4) # extend for better visibility
             display = overlay.apply(pred_mask.copy(), display) # overlay mask on frame
 
             # extended_mask = extend_mask_up(pred_mask.copy(), px=50) # for later processing, visible pins
@@ -102,7 +102,7 @@ def main():
             # display segmented lane and ball
             create_display("Lane Display", display, out=out)
             # see birds-eye view
-            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.4) 
+            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.5) 
             if full_warp is None or M_full is None: continue
             create_display("Birds Eye View", full_warp)
 
@@ -110,7 +110,7 @@ def main():
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
             pt_warped = cv2.perspectiveTransform(pt, M_full)
             x_w, y_w = pt_warped[0, 0]
-            y_w = y_w-60 # constant to increase y
+            y_w = y_w-100 # constant to increase y
 
             x_smooth, y_smooth = draw_path_smooth(int(x_w), int(y_w), ball_trajectory, full_warp)  
 

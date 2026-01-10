@@ -13,5 +13,6 @@ DEBUG_PIPELINE = False # high-level debug in main
 DEBUG_BIRDS_EYE = False # debug birds-eye module
 
 # Model paths
-BALL_MODEL = "data/weights/best_ball_7.pt"  # YOLOv8 ball detection model path
-LANE_MODEL = "data/weights/lane_deeplab_model_2.pth"  # Lane segmentation model path
+BALL_MODEL = "weights/ball/best_ball_15.pt"  # YOLOv8 ball detection model path 
+# NOTE: 15 specific to bowling6, 7 more general
+LANE_MODEL = "weights/lane/lane_deeplab_model_2.pth"  # Lane segmentation model path
