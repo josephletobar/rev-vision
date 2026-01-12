@@ -87,6 +87,7 @@ def main():
             # extended_mask = extend_mask_up(pred_mask.copy(), px=50) # for later processing, visible pins
             # create_display("Extended Mask", extended_mask)
 
+            # TODO: VALIDATE MASK
             # extract the lane
             extraction = extract.apply(pred_mask.copy(), frame.copy()) 
             if extraction is None: continue
