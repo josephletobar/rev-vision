@@ -1,4 +1,5 @@
 import argparse
+import pathlib
 import matplotlib.pylab as plt
 import cv2
 import csv
@@ -6,7 +7,9 @@ import numpy as np
 import subprocess
 import socket
 import json
-from models.lane_segmentation.deeplab_predict import deeplab_predict
+from pathlib import Path
+from ultralytics import YOLO
+# from models.lane_segmentation.deeplab_predict import deeplab_predict
 from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
 from vision.geometric_validation import validate
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator, extend_mask_up
@@ -14,7 +17,9 @@ from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from archive.geometric_helper import GeometricTransformer
 from vision.lane_visual import post_visual
 from vision.trajectory import Trajectory
-from config import DEBUG_PIPELINE, STEP, VIDEO_FPS
+from config import DEBUG_PIPELINE, LANE_MODEL, STEP, VIDEO_FPS
+
+model = YOLO(Path(LANE_MODEL))
 
 def create_display(name, display, out=False):
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
@@ -79,7 +84,10 @@ def main():
             display = frame.copy()
                     
             # predict lane
-            _, pred_mask = deeplab_predict(frame.copy()) 
+            # _, pred_mask = deeplab_predict(frame.copy()) 
+            res = model.predict(source=frame.copy(), conf=0.25, verbose=False)[0]
+            pred_mask = res.masks.data[0].cpu().numpy() if res.masks else None
+
             if pred_mask is None: continue
             pred_mask = extend_mask_up(pred_mask.copy(), px=4) # extend for better visibility
             display = overlay.apply(pred_mask.copy(), display) # overlay mask on frame
