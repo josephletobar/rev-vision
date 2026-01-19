@@ -16,4 +16,4 @@ DEBUG_BIRDS_EYE = False # debug birds-eye module
 BALL_MODEL = "weights/ball/best_ball_7.pt"  # YOLOv8 ball detection model path 
 # NOTE: 15 specific to bowling6, 7 more general
 # LANE_MODEL = "weights/lane/lane_deeplab_model_2.pth"  # Lane segmentation model path
-LANE_MODEL = "weights/lane/best.pt"  # Lane segmentation model path
+LANE_MODEL = "weights/lane_segmentation_model.pt"  # Lane segmentation model path

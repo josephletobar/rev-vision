@@ -112,7 +112,7 @@ def live_visual():
     ax.invert_yaxis()
 
     draw_lane(ax)
-    plt.show()
+    plt.show(block=False)
 
     # --- show scale in feet ---
     inch_to_ft = 1 / 12

@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from pyparsing import deque
 
 # Expects a mask
 def extraction_validator(mask):
@@ -7,6 +8,7 @@ def extraction_validator(mask):
     mask[mask > 127] = 255
     return mask
 
+# TODO: BROKEN
 def extend_mask_up(mask, px):
     mask = (mask > 0).astype(np.uint8) * 255
 
@@ -15,6 +17,14 @@ def extend_mask_up(mask, px):
     out[0:h-px] |= mask[px:h]
     return out
 
+class MaskWindowAvg:
+    def __init__(self, N):
+        self.N = N
+        self.buf = deque(maxlen=N)
+
+    def update(self, mask):
+        self.buf.append(mask)
+        return np.mean(self.buf, axis=0)
 
 
 # Validate and normalize mask for further processing
@@ -52,7 +62,7 @@ class BaseMaskProcessor:
         return m_smoothed
 
 class OverlayProcessor(BaseMaskProcessor):
-    def __init__(self, blur_kernel=41, thresh=140, alpha=0.5, **kw):
+    def __init__(self, blur_kernel=71, thresh=120, alpha=0.5, **kw):
         super().__init__(**kw)
         self.blur_kernel = blur_kernel
         self.thresh = thresh

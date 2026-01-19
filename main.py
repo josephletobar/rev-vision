@@ -9,17 +9,17 @@ import socket
 import json
 from pathlib import Path
 from ultralytics import YOLO
-# from models.lane_segmentation.deeplab_predict import deeplab_predict
 from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
+from vision.deeplab_predict import deeplab_predict
 from vision.geometric_validation import validate
-from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator, extend_mask_up
+from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator, extend_mask_up, MaskWindowAvg
+from vision.mask_preprocessing import MaskPreprocessor
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
 from archive.geometric_helper import GeometricTransformer
 from vision.lane_visual import post_visual
 from vision.trajectory import Trajectory
 from config import DEBUG_PIPELINE, LANE_MODEL, STEP, VIDEO_FPS
 
-model = YOLO(Path(LANE_MODEL))
 
 def create_display(name, display, out=False):
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
@@ -36,6 +36,8 @@ def main():
     extract = ExtractProcessor()
     perspective = BirdsEyeTransformer()
     ball_trajectory = Trajectory()
+    mask_avg = MaskWindowAvg(N=3)
+    mask_preproc = MaskPreprocessor()
 
     # set socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -84,13 +86,17 @@ def main():
             display = frame.copy()
                     
             # predict lane
-            # _, pred_mask = deeplab_predict(frame.copy()) 
-            res = model.predict(source=frame.copy(), conf=0.25, verbose=False)[0]
-            pred_mask = res.masks.data[0].cpu().numpy() if res.masks else None
+            # res = model.predict(source=frame.copy(), imgsz=960, conf=0.8, verbose=False)[0]
 
+            # predict lane
+            _, pred_mask = deeplab_predict(frame.copy()) 
             if pred_mask is None: continue
             pred_mask = extend_mask_up(pred_mask.copy(), px=4) # extend for better visibility
             display = overlay.apply(pred_mask.copy(), display) # overlay mask on frame
+
+            # create_display("Lane Display", display, out=out)
+
+            # continue
 
             # extended_mask = extend_mask_up(pred_mask.copy(), px=50) # for later processing, visible pins
             # create_display("Extended Mask", extended_mask)
@@ -107,6 +113,7 @@ def main():
             if not found_ball_point: 
                 create_display("Lane Display", display, out=out) # show only segmented lane
                 continue # no need for further processing
+
 
             # display segmented lane and ball
             create_display("Lane Display", display, out=out)
