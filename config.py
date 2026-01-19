@@ -1,5 +1,5 @@
 
-STEP = 8 # Video reading step
+STEP = 1 # Video reading step
 VIDEO_FPS = 30 # Glasses FPS
 
 CSV_READ = "outputs/points.csv"
@@ -15,4 +15,4 @@ DEBUG_BIRDS_EYE = False # debug birds-eye module
 # Model paths
 BALL_MODEL = "weights/ball/best_ball_7.pt"  # YOLOv8 ball detection model path 
 # NOTE: 15 specific to bowling6, 7 more general
-LANE_MODEL = "weights/lane/lane_deeplab_model_2.pth"  # Lane segmentation model path
+LANE_MODEL = "weights/lane/lane_model.pth"  # Lane segmentation model path
