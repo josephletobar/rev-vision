@@ -8,11 +8,19 @@ from models.lane_segmentation.deeplab_model import get_deeplab_model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Data
-dataset = LaneDataset("data/images", "data/lane_masks")
-dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+dataset = LaneDataset("data/lane_segmentation_new/images", "data/lane_segmentation_new/masks")
+dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
 # Model (binary head inside your getter)
 model = get_deeplab_model()
+model = model.to(device)
+
+model = get_deeplab_model().to(device)
+
+for m in model.modules():
+    if isinstance(m, nn.BatchNorm2d):
+        m.eval()
+
 
 # LOSS:
 # If your getter includes Sigmoid in the head -> use BCELoss
@@ -20,6 +28,9 @@ model = get_deeplab_model()
 loss_fn = nn.BCEWithLogitsLoss()
 
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
+
+torch.cuda.empty_cache()
+
 
 # Train
 for epoch in range(50):
@@ -32,7 +43,9 @@ for epoch in range(50):
             masks = masks.unsqueeze(1)  # [B,1,H,W]
         masks = masks.float().to(device)
 
-        preds = model(images)["out"] if isinstance(model(images), dict) else model(images)
+        out = model(images)
+        preds = out["out"] if isinstance(out, dict) else out
+
 
         loss = loss_fn(preds, masks)
 

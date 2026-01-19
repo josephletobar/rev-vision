@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 import torchvision.transforms as T
 
 class LaneDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, size=(960, 720)):
+    def __init__(self, image_dir, mask_dir, size=(720, 960)):
         self.image_dir = image_dir 
         self.mask_dir = mask_dir
 
@@ -42,7 +42,7 @@ class LaneDataset(Dataset):
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
 
-    dataset = LaneDataset("data/images/", "data/lane_masks/")
+    dataset = LaneDataset("data/lane_segmentation_new/new", "data/lane_segmentation_new/new")
     print(f"Loaded {len(dataset)} image–mask pairs:\n")
 
     for name in dataset.image_names:
