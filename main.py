@@ -50,7 +50,6 @@ def main():
     parser.add_argument("--output", type=str, help="Path to save outputs (optional)")
     args = parser.parse_args()
 
-
     # video processing
     cap = cv2.VideoCapture(args.input)
 
@@ -79,20 +78,20 @@ def main():
             display = frame.copy()
                     
             # predict lane
-            _, pred_mask = deeplab_predict(frame.copy()) 
+            pred_mask = deeplab_predict(frame.copy()) 
             if pred_mask is None: continue
-            pred_mask = extend_mask_up(pred_mask.copy(), px=4) # extend for better visibility
-            display = overlay.apply(pred_mask.copy(), display) # overlay mask on frame
 
-            # extended_mask = extend_mask_up(pred_mask.copy(), px=50) # for later processing, visible pins
-            # create_display("Extended Mask", extended_mask)
+            # overlay 
+            mask_color = np.zeros_like(frame)
+            mask_color[:, :, 1] = pred_mask  # green
+            display = cv2.addWeighted(frame, 1.0, mask_color, 0.4, 0)
 
             # TODO: VALIDATE MASK
             # extract the lane
             extraction = extract.apply(pred_mask.copy(), frame.copy()) 
+        
             if extraction is None: continue
-            if not validate(extraction.copy()): continue # validate the mask  
-            # create_display("Lane Extraction", extraction.copy())
+            create_display("Lane Extraction", extraction, out=out)
 
             # find the ball
             found_ball_point = find_ball(extraction.copy(), display)
@@ -103,7 +102,7 @@ def main():
             # display segmented lane and ball
             create_display("Lane Display", display, out=out)
             # see birds-eye view
-            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.5) 
+            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.7) 
             if full_warp is None or M_full is None: continue
             create_display("Birds Eye View", full_warp)
 

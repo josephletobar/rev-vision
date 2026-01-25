@@ -15,7 +15,91 @@ def extend_mask_up(mask, px):
     out[0:h-px] |= mask[px:h]
     return out
 
+def _get_lines(mask: np.ndarray):
 
+        if mask.ndim == 3:
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        mask = mask.astype(np.uint8)
+
+        ys, xs = np.where(mask > 127)
+
+        # find lane outer lines for stabilization
+        edges = cv2.Canny(mask, 50, 150)
+        lines = cv2.HoughLinesP(
+            edges,
+            rho=1,
+            theta=np.pi/180,
+            threshold=80,
+            minLineLength=100,
+            maxLineGap=10
+        )
+        if lines is None:
+            msg = "[BaseTransformer._stabilize_rotation] HoughLinesP returned no lines"
+            print(msg)
+            raise RuntimeError(msg)
+
+        cx = int(xs.mean())
+        cy = int(ys.mean())
+        mask_center = (cx, cy)
+
+        left_lines = []
+        right_lines = []
+
+        # detect a right / left line
+        for x1, y1, x2, y2 in lines[:, 0]:
+            if x2 == x1:  # avoid vertical lines
+                continue
+            slope = (y2 - y1) / (x2 - x1)
+            
+            if abs(slope) < 0.6:
+                continue  # skip horizontal or almost flat lines
+
+            if slope > 0:  
+                right_lines.append((x1, y1, x2, y2))
+            else:
+                left_lines.append((x1, y1, x2, y2))
+        
+        return left_lines, right_lines, mask_center
+
+def _average_lines(lines, frame_size):
+        """
+        Compute an averaged line and its angle from a set of detected lines.
+
+        Args:
+            lines (list or np.ndarray): Collection of lines in the form (x1, y1, x2, y2).
+            frame_height (int): Height of the image frame, used to anchor the averaged line.
+
+        Returns:
+            tuple: ((x1, y1, x2, y2), angle_radians) or None if no valid lines.
+        """
+        slopes = []
+        intercepts = []
+        for x1, y1, x2, y2 in lines:
+            if x2 != x1:  # avoid division by zero
+                slope = (y2 - y1) / (x2 - x1)
+                intercept = y1 - slope * x1
+                slopes.append(slope)
+                intercepts.append(intercept)
+        if not slopes:
+            msg = "[BaseTransformer._average_lines] No valid slopes/lines found"
+            print(msg)
+            # raise RuntimeError(msg)  # no valid lines
+            return None
+
+        avg_slope = np.mean(slopes)
+        avg_intercept = np.mean(intercepts)
+
+        # Pick two y-values to define the averaged line
+        y1 = frame_size  # bottom of frame
+        y2 = 0  # some height up
+
+        x1 = int((y1 - avg_intercept) / avg_slope)
+        x2 = int((y2 - avg_intercept) / avg_slope)
+
+        # compute the resulting line's angle
+        angle = np.arctan2(x2 - x1, y2 - y1)
+
+        return (x1, y1, x2, y2), angle
 
 # Validate and normalize mask for further processing
 class BaseMaskProcessor:
@@ -83,17 +167,82 @@ class ExtractProcessor(BaseMaskProcessor):
     def apply(self, mask, frame):
         m = self._prep_mask(mask, frame)
         if m is None:
-            print("[ExtractProcessor.apply] Preprocessed mask is None, skipping extraction")
-            return None  # no valid mask this frame
-        
-        # soften edges and binarize
-        smoothed = self._smooth_mask(m)
-        
-        # Keep only the lane pixels from the frame
-        cutout = cv2.bitwise_and(frame, frame, mask=smoothed)
+            return None
 
-        if not self.tight_crop:
+        # strict confidence threshold
+        THRESH = 120
+        m = np.zeros_like(mask, dtype=np.uint8)
+        m[mask >= THRESH] = 255
+
+        if cv2.countNonZero(m) == 0:
+            return None
+
+        # lane-only image
+        cutout = cv2.bitwise_and(frame, frame, mask=m)
+ 
+        # ---- ROBUST LINE FIT (NO HOUGH) ----
+
+        # find largest contour
+        contours, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        if not contours:
             return cutout
+        
+
+
+        cnt = max(contours, key=cv2.contourArea)
+        pts = cnt.reshape(-1, 2)
+
+
+        if len(pts) < 50:
+            return cutout
+
+        # split left / right by median x
+        mid_x = np.median(pts[:, 0])
+        left_pts = pts[pts[:, 0] < mid_x]
+        right_pts = pts[pts[:, 0] > mid_x]
+
+        # trim left points
+        ys = left_pts[:, 1]
+        y_lo = np.percentile(ys, 20)
+        y_hi = np.percentile(ys, 60)
+        left_pts = left_pts[(ys >= y_lo) & (ys <= y_hi)]
+
+        # trim right points
+        ys = right_pts[:, 1]
+        y_lo = np.percentile(ys, 20)
+        y_hi = np.percentile(ys, 60)
+        right_pts = right_pts[(ys >= y_lo) & (ys <= y_hi)]
+
+
+        # visualize contour points
+        for (x, y) in right_pts:
+            cv2.circle(cutout, (x, y), 4, (0, 0, 255), -1)
+
+        # visualize contour points
+        for (x, y) in left_pts:
+            cv2.circle(cutout, (x, y), 4, (255, 0, 0), -1)
+
+        ys_mask, _ = np.where(m > 0)
+        y_top = int(ys_mask.min())
+        y_bot = int(ys_mask.max())
+
+        # fit + draw left line
+        if len(left_pts) > 20:
+            vx, vy, x0, y0 = cv2.fitLine(left_pts, cv2.DIST_L2, 0, 0.01, 0.01).flatten()
+            x_top = int(x0 + (y_top - y0) * vx / vy)
+            x_bot = int(x0 + (y_bot - y0) * vx / vy)
+            cv2.line(cutout, (x_top, y_top), (x_bot, y_bot), (255, 255, 255), 3)
+
+        # fit + draw right line
+        if len(right_pts) > 20:
+            vx, vy, x0, y0 = cv2.fitLine(right_pts, cv2.DIST_L2, 0, 0.01, 0.01).flatten()
+            x_top = int(x0 + (y_top - y0) * vx / vy)
+            x_bot = int(x0 + (y_bot - y0) * vx / vy)
+            cv2.line(cutout, (x_top, y_top), (x_bot, y_bot), (255, 255, 255), 3)
+
+        return cutout
+
+
 
         # Tight crop to lane bounding box
         ys, xs = np.where(m > 0)

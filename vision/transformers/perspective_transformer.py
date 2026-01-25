@@ -6,7 +6,7 @@ from vision.transformers.base_transformer import BaseTransformer
 class BirdsEyeTransformer(BaseTransformer):
 
     # needed for perspective transform
-    def _get_mask_corners(self, mask: np.ndarray, vis_debug=None):
+    def _get_mask_corners(self, mask: np.ndarray, vis_debug=True):
         """
         Extract the four approximate corner points (TL, TR, BR, BL)
         from a binary lane mask for perspective transformation.
