@@ -87,13 +87,14 @@ class PostProcessor():
         y_top = int(ys.min()) - top_offset
         y_bot = int(ys.max())
 
-        left_slope = None
-        right_slope = None
+        left_angle = None
+        right_angle = None
+        eps = 1e-6
 
         # fit + draw left line
         if len(left_pts) > 20:
             vx, vy, x0, y0 = cv2.fitLine(left_pts, cv2.DIST_L2, 0, 0.01, 0.01).flatten()
-            left_slope = vy / vx
+            left_angle  = np.arctan(vx / (vy + eps))
             x_top = int(x0 + (y_top - y0) * vx / vy)
             x_bot = int(x0 + (y_bot - y0) * vx / vy)
             cv2.line(cutout, (x_top, y_top), (x_bot, y_bot), (220, 245, 245), 3)
@@ -101,12 +102,12 @@ class PostProcessor():
         # fit + draw right line
         if len(right_pts) > 20:
             vx, vy, x0, y0 = cv2.fitLine(right_pts, cv2.DIST_L2, 0, 0.01, 0.01).flatten()
-            right_slope = vy / vx
+            right_angle = np.arctan(vx / (vy + eps))
             x_top = int(x0 + (y_top - y0) * vx / vy)
             x_bot = int(x0 + (y_bot - y0) * vx / vy)
             cv2.line(cutout, (x_top, y_top), (x_bot, y_bot), (220, 245, 245), 3)
 
-        return cutout, left_slope, right_slope
+        return cutout, (left_angle, right_angle)
 
         # Tight crop to lane bounding box
         ys, xs = np.where(m > 0)

@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
-from vision.transformers.base_transformer import BaseTransformer
-# from vision.transformers.geometric_transformer import GeometricTransformer
+from config import LANE_W, LANE_H, DEBUG_BIRDS_EYE
 
-class BirdsEyeTransformer(BaseTransformer):
+class BirdsEyeTransformer():
+    def __init__(self):
+        self.out_size=(LANE_W, LANE_H)
+        self.debug = DEBUG_BIRDS_EYE
 
     # needed for perspective transform
     def _get_mask_corners(self, mask: np.ndarray, vis_debug=True):
@@ -24,7 +26,8 @@ class BirdsEyeTransformer(BaseTransformer):
             print(msg)
             raise RuntimeError(msg)
 
-        ys, xs = self._nonzero_coords(mask)
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        ys, xs = np.where(mask > 127)
         if len(xs) == 0:
             msg = "[BirdsEyeTransformer._get_mask_corners] No nonzero pixels in mask"
             print(msg)
@@ -75,8 +78,24 @@ class BirdsEyeTransformer(BaseTransformer):
 
         return TL, TR, BR, BL
 
+    def _stabilize_rotation(self, mask: np.ndarray, left_angle, right_angle):
+ 
+        avg_angle = (left_angle + right_angle) / 2 # tells how much the whole lane has tilted
 
-    def transform(self, frame, mask, alpha=1):
+        h, w = mask.shape[:2]
+        center = (w // 2, h // 2)
+        rotation_gain = 1 #1.35 # gain constant for rotation
+
+        M = cv2.getRotationMatrix2D(center, -np.degrees(avg_angle) * rotation_gain, 1.0)
+
+        stabilized = cv2.warpAffine(mask, M, (w, h))
+
+        return stabilized, M
+
+
+    def transform(self, frame, mask, 
+                  left_angle, right_angle, 
+                  alpha=1):
 
         try:
             """alpha=1 keeps the full warp; smaller values relax the top edge toward its midpoint."""
@@ -89,15 +108,12 @@ class BirdsEyeTransformer(BaseTransformer):
             if self.debug:
                 vis_debug = mask.copy()
 
-            stabilized, R = self._stabilize_rotation(mask, vis_debug if self.debug else None)
+            stabilized, R = self._stabilize_rotation(mask, left_angle, right_angle)
             if stabilized is None:
                 msg = "[BirdsEyeTransformer.transform] Stabilization returned None"
                 print(msg)
                 raise RuntimeError(msg)
             R3 = np.vstack([R, [0, 0, 1]]) # the matrix used to stabilize rotation
-            
-            # # geo = self.geometric._transform(stabilized)
-            # geometric_transform(self, stabilized)
                     
             corners = self._get_mask_corners(stabilized, vis_debug if self.debug else None)
             if corners is None:

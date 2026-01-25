@@ -6,13 +6,12 @@ import numpy as np
 import subprocess
 import socket
 import json
+import config
 from vision.deeplab_predict import deeplab_predict
 from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
 from vision.mask_processing import PostProcessor
-from vision.transformers.perspective_transformer import BirdsEyeTransformer
-from vision.lane_visual import post_visual
+from vision.perspective_transformer import BirdsEyeTransformer
 from vision.trajectory import Trajectory
-from config import DEBUG_PIPELINE, STEP, VIDEO_FPS
 
 def create_display(name, display, out=False):
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
@@ -67,7 +66,7 @@ def main():
             if frame is None: continue
 
             frame_idx += 1
-            if frame_idx != 1 and frame_idx % STEP != 0: continue
+            if frame_idx != 1 and frame_idx % config.STEP != 0: continue
 
             t_sec = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
 
@@ -84,8 +83,10 @@ def main():
 
             # TODO: VALIDATE MASK
             # post process the lane
-            extraction, left_line, right_line = post_process.apply(pred_mask.copy(), frame.copy()) 
+            extraction, mask_boundaries = post_process.apply(pred_mask.copy(), frame.copy()) 
             if extraction is None: continue
+            left_angle, right_angle = mask_boundaries
+            if left_angle is None or right_angle is None: continue
 
             # find the ball
             found_ball_point = find_ball(extraction.copy(), display)
@@ -95,7 +96,9 @@ def main():
             create_display("Lane Display", display, out=out) # display segmented lane and ball
 
             # see birds-eye view
-            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.7) 
+            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), 
+                                                      left_angle, right_angle, 
+                                                      alpha=1.7) 
             if full_warp is None or M_full is None: continue
             create_display("Birds Eye View", full_warp)
 
