@@ -6,12 +6,10 @@ import numpy as np
 import subprocess
 import socket
 import json
-from models.lane_segmentation.deeplab_predict import deeplab_predict
+from vision.deeplab_predict import deeplab_predict
 from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
-from vision.geometric_validation import validate
-from vision.mask_processing import OverlayProcessor, ExtractProcessor, extraction_validator, extend_mask_up
+from vision.mask_processing import PostProcessor
 from vision.transformers.perspective_transformer import BirdsEyeTransformer
-from archive.geometric_helper import GeometricTransformer
 from vision.lane_visual import post_visual
 from vision.trajectory import Trajectory
 from config import DEBUG_PIPELINE, STEP, VIDEO_FPS
@@ -24,11 +22,9 @@ def create_display(name, display, out=False):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         return  # Exit on 'q' key  
 
-
 def main():
     # create instances
-    overlay = OverlayProcessor()
-    extract = ExtractProcessor()
+    post_process = PostProcessor()
     perspective = BirdsEyeTransformer()
     ball_trajectory = Trajectory()
 
@@ -87,20 +83,17 @@ def main():
             display = cv2.addWeighted(frame, 1.0, mask_color, 0.4, 0)
 
             # TODO: VALIDATE MASK
-            # extract the lane
-            extraction = extract.apply(pred_mask.copy(), frame.copy()) 
-        
+            # post process the lane
+            extraction, left_line, right_line = post_process.apply(pred_mask.copy(), frame.copy()) 
             if extraction is None: continue
-            create_display("Lane Extraction", extraction, out=out)
 
             # find the ball
             found_ball_point = find_ball(extraction.copy(), display)
             if not found_ball_point: 
                 create_display("Lane Display", display, out=out) # show only segmented lane
                 continue # no need for further processing
+            create_display("Lane Display", display, out=out) # display segmented lane and ball
 
-            # display segmented lane and ball
-            create_display("Lane Display", display, out=out)
             # see birds-eye view
             full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), alpha=1.7) 
             if full_warp is None or M_full is None: continue
