@@ -32,7 +32,7 @@ class PostProcessor():
     def apply(self, mask, frame):
         m = self._prep_mask(mask, frame)
         if m is None:
-            return None
+            return None, None
 
         # strict confidence threshold
         THRESH = 120
@@ -40,7 +40,7 @@ class PostProcessor():
         m[mask >= THRESH] = 255
 
         if cv2.countNonZero(m) == 0:
-            return None
+            return None, None
 
         # lane-only image
         cutout = cv2.bitwise_and(frame, frame, mask=m)
@@ -50,13 +50,13 @@ class PostProcessor():
         # find largest contour
         contours, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         if not contours:
-            return cutout
+            return cutout, None
     
         cnt = max(contours, key=cv2.contourArea)
         pts = cnt.reshape(-1, 2)
 
         if len(pts) < 50:
-            return cutout
+            return cutout, None
 
         # split left / right by median x
         mid_x = np.median(pts[:, 0])

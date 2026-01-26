@@ -84,7 +84,7 @@ def main():
             # TODO: VALIDATE MASK
             # post process the lane
             extraction, mask_boundaries = post_process.apply(pred_mask.copy(), frame.copy()) 
-            if extraction is None: continue
+            if extraction is None or mask_boundaries is None: continue
             left_angle, right_angle = mask_boundaries
             if left_angle is None or right_angle is None: continue
 

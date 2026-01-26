@@ -6,7 +6,7 @@ from config import CSV_READ
 from vision.lane_visual import post_visual
 
 OUTPUT = True
-INPUT_VIDEO = "test_videos/bowling16.mov"
+INPUT_VIDEO = "test_videos/bowling11.mov"
 
 
 if OUTPUT:
