@@ -39,20 +39,12 @@ class LaneSegmentationModel(nn.Module):
         features = self.encoder(x)
         out = self.decoder(features)
         return out
-    
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-model = LaneSegmentationModel(n_classes=1).to(device)
-
-criterion = nn.BCEWithLogitsLoss()  # single-channel mask
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 
-# --- load model ---
-model = LaneSegmentationModel(n_classes=1).to(device)
-model.load_state_dict(torch.load(config.LANE_MODEL, map_location=device))
-model.eval()
+
+# criterion = nn.BCEWithLogitsLoss()  # single-channel mask
+# optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
 
 # video processing
 cap = cv2.VideoCapture("test_videos/bowling.mp4")
@@ -67,7 +59,7 @@ def preprocess_frame(frame, size=(720, 480)):
     return tensor
 
 
-def deeplab_predict(frame):
+def deeplab_predict(model, device,  frame):
     img_tensor = preprocess_frame(frame).to(device)
 
     with torch.no_grad():

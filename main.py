@@ -6,8 +6,9 @@ import numpy as np
 import subprocess
 import socket
 import json
+import torch
 import config
-from vision.deeplab_predict import deeplab_predict
+from vision.lane_segmentation import LaneSegmentationModel, deeplab_predict
 from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
 from vision.mask_processing import PostProcessor
 from vision.perspective_transformer import BirdsEyeTransformer
@@ -45,6 +46,12 @@ def main():
     parser.add_argument("--output", type=str, help="Path to save outputs (optional)")
     args = parser.parse_args()
 
+    # deeplab model setup    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = LaneSegmentationModel(n_classes=1).to(device)
+    model.load_state_dict(torch.load(config.LANE_MODEL, map_location=device))
+    model.eval()
+
     # video processing
     cap = cv2.VideoCapture(args.input)
 
@@ -73,7 +80,7 @@ def main():
             display = frame.copy()
                     
             # predict lane
-            pred_mask = deeplab_predict(frame.copy()) 
+            pred_mask = deeplab_predict(model, device, frame.copy()) 
             if pred_mask is None: continue
 
             # overlay 

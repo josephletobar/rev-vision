@@ -1,6 +1,6 @@
 from vision.mask_processing import OverlayProcessor, ExtractProcessor, extend_mask_up, extraction_validator
 from archive.geometric_validation import validate
-from vision.deeplab_predict import deeplab_predict
+from vision.lane_segmentation import deeplab_predict
 overlay = OverlayProcessor()
 extract = ExtractProcessor()
 import os
