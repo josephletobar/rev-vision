@@ -1,3 +1,4 @@
+import math
 from ultralytics import YOLO
 import cv2
 import csv
@@ -7,8 +8,7 @@ import torch
 import config
 
 import logging
-if not config.DEBUG_PIPELINE:
-    logging.getLogger("ultralytics").setLevel(logging.ERROR)
+logging.getLogger("ultralytics").setLevel(logging.ERROR)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 ball_model = YOLO(config.BALL_MODEL).to(device)
@@ -18,9 +18,50 @@ if torch.cuda.is_available():
 else:
     print("[YOLO] CPU only")
 
+class ExtrapolatePoints():
+    def __init__(self, Kp=170, dir_alpha=0.99):
+        self.prev_point = None
+        self.dir = None
+        self.Kp = Kp
+        self.dir_alpha = dir_alpha
+
+    def update(self, curr_point: tuple):
+        if self.prev_point is None:
+            self.prev_point = curr_point
+            return curr_point
+
+        dx = curr_point[0] - self.prev_point[0]
+        dy = curr_point[1] - self.prev_point[1]
+
+        mag = math.hypot(dx, dy)
+        if mag < 1e-6:
+            return curr_point
+
+        ux, uy = dx / mag, dy / mag
+
+        # EMA the direction
+        if self.dir is None:
+            self.dir = (ux, uy)
+        else:
+            self.dir = (
+                self.dir_alpha * self.dir[0] + (1 - self.dir_alpha) * ux,
+                self.dir_alpha * self.dir[1] + (1 - self.dir_alpha) * uy,
+            )
+
+        # renormalize
+        dmag = math.hypot(self.dir[0], self.dir[1])
+        ux, uy = self.dir[0] / dmag, self.dir[1] / dmag
+
+        self.prev_point = curr_point
+
+        return (
+            int(curr_point[0] + self.Kp * ux),
+            int(curr_point[1] + self.Kp * uy),
+        )
+
 
 class ExponentialMovingAvg():
-    def __init__(self, alpha=0.8):
+    def __init__(self, alpha=0.9):
         self.prev_point = None
         self.alpha = alpha
     def update(self, curr_point: tuple):
@@ -60,6 +101,7 @@ def find_ball(frame, display):
     return int(ball_cx), int(ball_cy)
 
 ema = ExponentialMovingAvg()
+extrapolate = ExtrapolatePoints()
 
 def draw_path_smooth(ball_cx, ball_cy, trajectory, display):
 
@@ -67,16 +109,17 @@ def draw_path_smooth(ball_cx, ball_cy, trajectory, display):
     cv2.circle(display, midpoint, 3, (0, 0, 255), -1) # draw a circle around the midpoint
 
     smoothed_point = ema.update(midpoint)
+    extrapolated_point = extrapolate.update(smoothed_point)
 
-    trajectory.push(smoothed_point) # appends new points into the buffer
+    trajectory.push(extrapolated_point) # appends new points into the buffer
 
     pts = trajectory.all()
     # Draw all the previous points
     for i in range(1, len(pts)):
         cv2.line(display, pts[i-1], pts[i], (0, 0, 255), 5)
     
-    return smoothed_point
-
+    return extrapolated_point
+    
 def save_points_csv(write_dir, ball_cx, ball_cy, t_sec):
     write_path = f"{write_dir}/points.csv"
     file_exists = os.path.exists(write_path)

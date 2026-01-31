@@ -11,6 +11,8 @@ import json
 import time
 import os
 
+LINE_WITDH = 8
+
 def calculate_speed(t1, t2, distance_ft=60.0):
     ty = abs(t2 - t1) 
 
@@ -105,7 +107,7 @@ def live_visual():
 
     plt.ion() # interavtive mode so it can update withotu blocking
     fig, ax = plt.subplots()
-    line, = ax.plot([], [], color="blue", linewidth=5)
+    line, = ax.plot([], [], color="blue", linewidth=LINE_WITDH)
 
     ax.set_xlim(0, LANE_W)
     ax.set_ylim(0, LANE_H)
@@ -166,7 +168,7 @@ def post_visual(file_path, output_path=None):
     avg_speed = calculate_speed(t1, t2, distance_ft)
 
     fig, ax = plt.subplots()
-    (line,) = ax.plot([], [], 'b-', lw=5)  # blue dots with connecting line
+    (line,) = ax.plot([], [], 'b-', lw=LINE_WITDH)  # blue dots with connecting line
 
     ax.set_xlim(0, LANE_W)
     ax.set_ylim(0, LANE_H)

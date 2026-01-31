@@ -8,10 +8,6 @@ CSV_READ = "outputs/points.csv"
 LANE_W = 400   # width  (across lane boards)
 LANE_H = 900   # height (lane length)
 
-# Debug Flags
-DEBUG_PIPELINE = False # high-level debug in main
-DEBUG_BIRDS_EYE = False # debug birds-eye module
-
 # Model paths
 BALL_MODEL = "weights/ball/best_ball_7.pt"  # YOLOv8 ball detection model path 
 # NOTE: 15 specific to bowling6, 7 more general

@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
-from config import LANE_W, LANE_H, DEBUG_BIRDS_EYE
+from config import LANE_W, LANE_H
+
+DEBUG_BIRDS_EYE = False
 
 class BirdsEyeTransformer():
     def __init__(self):
