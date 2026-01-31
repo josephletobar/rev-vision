@@ -1,18 +1,32 @@
 import cv2
 import numpy as np
 
-def extend_mask_up(mask, px):
-    mask = (mask > 0).astype(np.uint8) * 255
+class AverageSmoother():
+    def __init__(self, window_size: int):
+        self.window_size = window_size
+        self.history = []
 
-    h, w = mask.shape[:2]
-    out = mask.copy()
-    out[0:h-px] |= mask[px:h]
-    return out
+    def smooth(self, mask):
+        self.history.append(mask.astype(np.float32))
+        if len(self.history) > self.window_size:
+            self.history.pop(0)
+        avg = np.mean(self.history, axis=0)
+        avg = (avg >= 128).astype(np.uint8) * 255  # convert back to valid OpenCV mask
+        return avg  
 
 class PostProcessor():
     def __init__(self, min_fraction:int =0.01, bin_thresh:int =0.5):
         self.min_fraction = min_fraction # for mask validation
         self.bin_thresh = bin_thresh # decide binary thershold
+        self.smoother = AverageSmoother(window_size=2)
+
+    def _extend_mask_up(self, mask, px):
+        mask = (mask > 0).astype(np.uint8) * 255
+
+        h, w = mask.shape[:2]
+        out = mask.copy()
+        out[0:h-px] |= mask[px:h]
+        return out
 
     def _prep_mask(self, mask, frame):
         if mask is None or frame is None:
@@ -41,6 +55,11 @@ class PostProcessor():
 
         if cv2.countNonZero(m) == 0:
             return None, None
+        
+        m = self._extend_mask_up(m, px=5)
+
+        # smooth mask averaging
+        m = self.smoother.smooth(m)
 
         # lane-only image
         cutout = cv2.bitwise_and(frame, frame, mask=m)
@@ -108,13 +127,4 @@ class PostProcessor():
             cv2.line(cutout, (x_top, y_top), (x_bot, y_bot), (220, 245, 245), 3)
 
         return cutout, (left_angle, right_angle)
-
-        # Tight crop to lane bounding box
-        ys, xs = np.where(m > 0)
-        if xs.size == 0 or ys.size == 0:
-            print("[ExtractProcessor.apply] No nonzero pixels after mask preprocessing")
-            return None
-        x0, x1 = xs.min(), xs.max()
-        y0, y1 = ys.min(), ys.max()
-        return cutout[y0:y1+1, x0:x1+1]
     

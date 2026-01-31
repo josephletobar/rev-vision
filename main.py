@@ -105,7 +105,7 @@ def main():
             # see birds-eye view
             full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), 
                                                       left_angle, right_angle, 
-                                                      alpha=1.7) 
+                                                      alpha=1.4) 
             if full_warp is None or M_full is None: continue
             create_display("Birds Eye View", full_warp)
 
@@ -113,7 +113,7 @@ def main():
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
             pt_warped = cv2.perspectiveTransform(pt, M_full)
             x_w, y_w = pt_warped[0, 0]
-            y_w = y_w-100 # constant to increase y
+            y_w = y_w-120 # constant to increase y
 
             x_smooth, y_smooth = draw_path_smooth(int(x_w), int(y_w), ball_trajectory, full_warp)  
 
