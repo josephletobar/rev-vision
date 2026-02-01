@@ -18,6 +18,7 @@ if torch.cuda.is_available():
 else:
     print("[YOLO] CPU only")
 
+# NOTE: Not using
 class ExtrapolatePoints():
     def __init__(self, Kp=170, dir_alpha=0.99):
         self.prev_point = None
@@ -61,7 +62,7 @@ class ExtrapolatePoints():
 
 
 class ExponentialMovingAvg():
-    def __init__(self, alpha=0.9):
+    def __init__(self, alpha=0.85):
         self.prev_point = None
         self.alpha = alpha
     def update(self, curr_point: tuple):
@@ -109,16 +110,16 @@ def draw_path_smooth(ball_cx, ball_cy, trajectory, display):
     cv2.circle(display, midpoint, 3, (0, 0, 255), -1) # draw a circle around the midpoint
 
     smoothed_point = ema.update(midpoint)
-    extrapolated_point = extrapolate.update(smoothed_point)
+    # extrapolated_point = extrapolate.update(smoothed_point)
 
-    trajectory.push(extrapolated_point) # appends new points into the buffer
+    trajectory.push(smoothed_point) # appends new points into the buffer
 
     pts = trajectory.all()
     # Draw all the previous points
     for i in range(1, len(pts)):
         cv2.line(display, pts[i-1], pts[i], (0, 0, 255), 5)
     
-    return extrapolated_point
+    return smoothed_point
     
 def save_points_csv(write_dir, ball_cx, ball_cy, t_sec):
     write_path = f"{write_dir}/points.csv"

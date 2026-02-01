@@ -116,9 +116,10 @@ def main():
             x_w, y_w = pt_warped[0, 0]
             if first_point:
                 first_point = False 
-                x_w = x_w-30 # constant to decrease x TODO: only for right handed bowlers, needs to be dynamic 
+                y_w = y_w-50 # constant to increase y
+                x_w = x_w-10 # constant to increase x
             else:
-                y_w = y_w-120 # constant to increase y
+                y_w = y_w-170 # constant to increase y
 
             x_smooth, y_smooth = draw_path_smooth(int(x_w), int(y_w), ball_trajectory, full_warp)  
 
