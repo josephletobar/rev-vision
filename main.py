@@ -89,12 +89,14 @@ def main():
             mask_color[:, :, 1] = pred_mask  # green
             display = cv2.addWeighted(frame, 1.0, mask_color, 0.4, 0)
 
-            # TODO: VALIDATE MASK
-            # post process the lane
-            extraction, mask_boundaries = post_process.apply(pred_mask.copy(), frame.copy()) 
-            if extraction is None or mask_boundaries is None: continue
+            # post process the lane and extract features
+            extraction, mask_boundaries, lane_corners, R = post_process.apply(pred_mask.copy(), frame.copy()) 
+            if extraction is None or mask_boundaries is None or lane_corners is None: continue
             left_angle, right_angle = mask_boundaries
+            (TL, TR, BR, BL) = lane_corners
+    
             if left_angle is None or right_angle is None: continue
+            create_display("Lane Segmentation", extraction, out=out) # show only segmented lane
 
             # find the ball
             found_ball_point = find_ball(extraction.copy(), display)
@@ -106,11 +108,14 @@ def main():
             # see birds-eye view
             full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), 
                                                       left_angle, right_angle, 
-                                                      alpha=2.3) 
+                                                      TL, TR, BR, BL,
+                                                      alpha=1.3) 
             if full_warp is None or M_full is None: continue
             create_display("Birds Eye View", full_warp)
 
             # convert detected point to perspective transformed point
+            R3 = np.vstack([R, [0, 0, 1]])   # 2x3 -> 3x3
+            M_full = M_full @ R3
             pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
             pt_warped = cv2.perspectiveTransform(pt, M_full)
             x_w, y_w = pt_warped[0, 0]

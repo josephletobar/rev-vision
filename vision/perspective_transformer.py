@@ -9,77 +9,6 @@ class BirdsEyeTransformer():
         self.out_size=(LANE_W, LANE_H)
         self.debug = DEBUG_BIRDS_EYE
 
-    # needed for perspective transform
-    def _get_mask_corners(self, mask: np.ndarray, vis_debug=True):
-        """
-        Extract the four approximate corner points (TL, TR, BR, BL)
-        from a binary lane mask for perspective transformation.
-
-        Args:
-            mask (np.ndarray): Binary or grayscale mask where lane pixels > 0.
-            vis_debug (np.ndarray, optional): Optional visualization image.
-
-        Returns:
-            tuple: (TL, TR, BR, BL) as (x, y) integer tuples, or None if mask is empty.
-        """
-
-        if mask is None:
-            msg = "[BirdsEyeTransformer._get_mask_corners] Received None mask"
-            print(msg)
-            raise RuntimeError(msg)
-
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        ys, xs = np.where(mask > 127)
-        if len(xs) == 0:
-            msg = "[BirdsEyeTransformer._get_mask_corners] No nonzero pixels in mask"
-            print(msg)
-            raise RuntimeError(msg)
-
-        
-        offset = int(0.05 * (ys.max() - ys.min())) # offset to go x% up/down into the mask to ignore curve
-
-        # grab top row of the mask
-        ytop = ys.min() + offset
-        xs_top = xs[ys == ytop]
-        TL = (xs_top.min(), ytop)
-        TR = (xs_top.max(), ytop)
-
-        # grab bottom row of the mask
-        ybot = ys.max() - offset*5
-        xs_bot = xs[ys == ybot]
-        BL = (xs_bot.min(), ybot)
-        BR = (xs_bot.max(), ybot)
-
-        # shift the cropped region upward slightly to simulate full lane depth
-        ytop -= offset 
-        ybot += offset * 4
-        TL = (xs_top.min(), ytop)
-        TR = (xs_top.max(), ytop)
-        mid_x = (xs_bot.min() + xs_bot.max()) // 2
-        scale = 1.2  # widen by 20%
-        half_width = (xs_bot.max() - xs_bot.min()) * scale / 2
-        BL = (int(mid_x - half_width), ybot)
-        BR = (int(mid_x + half_width), ybot)
-
-        # shows the found corner points
-        if vis_debug is not None:
-            vis_debug[ys, xs] = (255,255,255) # mark all selected pixels white
-            # Print corners
-            print(f"TL: ({int(TL[0])}, {int(TL[1])}), "
-            f"TR: ({int(TR[0])}, {int(TR[1])}), "
-            f"BL: ({int(BL[0])}, {int(BL[1])}), "
-            f"BR: ({int(BR[0])}, {int(BR[1])})")
-            # Show corners
-            cv2.circle(vis_debug, TL, 17, (0,0,255), -1) # Red
-            cv2.circle(vis_debug, TR, 17, (0,255,0), -1) # Green
-            cv2.line(vis_debug, TL, TR, (255, 0, 0), 3) # Connect the top
-            cv2.circle(vis_debug, BL, 17, (255,0,0), -1) # Blue
-            cv2.circle(vis_debug, BR, 17, (0,255,255), -1) # Yellow
-            cv2.line(vis_debug, BL, BR, (255, 0, 0), 3) # Connect the bottom
-        # cv2.imshow("Corners Debug ", vis_debug) # optionally show it seperately
-
-        return TL, TR, BR, BL
-
     def _stabilize_rotation(self, mask: np.ndarray, left_angle, right_angle):
  
         avg_angle = (left_angle + right_angle) / 2 # tells how much the whole lane has tilted
@@ -96,7 +25,8 @@ class BirdsEyeTransformer():
 
 
     def transform(self, frame, mask, 
-                  left_angle, right_angle, 
+                  left_angle, right_angle,
+                  TL, TR, BR, BL, 
                   alpha=1):
 
         try:
@@ -117,11 +47,7 @@ class BirdsEyeTransformer():
                 raise RuntimeError(msg)
             R3 = np.vstack([R, [0, 0, 1]]) # the matrix used to stabilize rotation
                     
-            corners = self._get_mask_corners(stabilized, vis_debug if self.debug else None)
-            if corners is None:
-                msg = "[BirdsEyeTransformer.transform] Corner detection returned None"
-                print(msg)
-                raise RuntimeError(msg)
+            corners = TL, TR, BR, BL
             
             src = np.float32(corners)  # TL, TR, BR, BL
             Wout, Hout = self.out_size
