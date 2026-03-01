@@ -2,7 +2,7 @@ import argparse
 import os
 import cv2
 import csv
-import numpy as np
+import numpy as nps
 import socket
 import json
 from vision.process_frame import ProcessFrame

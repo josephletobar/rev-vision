@@ -8,3 +8,4 @@ outputs/
 archive/
 .vscode
 *.ipynb linguist-vendored
+venv
