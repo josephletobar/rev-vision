@@ -22,7 +22,8 @@ RevVision delivers human-centered sports analytics using Meta glasses for comput
 ##  Simulated Meta Ray-Ban display overlay
 > *Note: Actual device does not allow direct recording; this is a reconstructed approximation.*
 
-https://github.com/user-attachments/assets/3f3cf83a-e3a0-464d-993f-02b495515221
+https://github.com/user-attachments/assets/3d040964-15b8-4c87-8f5f-d34374624251
+
 
 
 ## How to Use
