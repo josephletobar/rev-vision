@@ -121,16 +121,3 @@ def draw_path_smooth(ball_cx, ball_cy, trajectory, display):
     
     return smoothed_point
     
-def save_points_csv(write_dir, ball_cx, ball_cy, t_sec):
-    write_path = f"{write_dir}/points.csv"
-    file_exists = os.path.exists(write_path)
-
-    with open(write_path, "a", newline="") as f:
-        writer = csv.writer(f)
-
-        if not file_exists:
-            writer.writerow(["x", "y", "time_stamp"])
-
-        writer.writerow([ball_cx, ball_cy, t_sec])
-        f.flush()
-        os.fsync(f.fileno())

@@ -1,33 +1,36 @@
 import argparse
-import matplotlib.pylab as plt
+import os
 import cv2
 import csv
 import numpy as np
-import subprocess
 import socket
 import json
-import torch
-import config
-from vision.lane_segmentation import LaneSegmentationModel, deeplab_predict
-from vision.detect_ball_yolo import find_ball, draw_path_smooth, save_points_csv
-from vision.mask_processing import PostProcessor
-from vision.perspective_transformer import BirdsEyeTransformer
-from vision.trajectory import Trajectory
+from vision.process_frame import ProcessFrame
 
-def create_display(name, display, out=False):
-    cv2.namedWindow(name, cv2.WINDOW_NORMAL)
-    cv2.imshow(name, display)
-    if out:
-        out.write(display)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        return  # Exit on 'q' key  
+def send_point(conn, x, y):
+    msg = [float(x), float(y)]
+    try:
+        conn.sendall((json.dumps(msg) + "\n").encode())
+    except (BrokenPipeError, ConnectionResetError):
+        return False
+    return True
 
+def save_points_csv(write_dir, ball_cx, ball_cy, t_sec):
+    write_path = f"{write_dir}/points.csv"
+    file_exists = os.path.exists(write_path)
+
+    with open(write_path, "a", newline="") as f:
+        writer = csv.writer(f)
+
+        if not file_exists:
+            writer.writerow(["x", "y", "time_stamp"])
+
+        writer.writerow([ball_cx, ball_cy, t_sec])
+        f.flush()
+        os.fsync(f.fileno())
+    
 def main():
-    # create instances
-    post_process = PostProcessor()
-    perspective = BirdsEyeTransformer()
-    ball_trajectory = Trajectory()
-
+    
     # set socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(("127.0.0.1", 5000))
@@ -42,18 +45,15 @@ def main():
 
     # parse arguments
     parser = argparse.ArgumentParser(description="Lane Assist Video Processing")
-    parser.add_argument("--input", type=str, required=True, help="Path to video file")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--input", type=str, help="Path to video file")
+    group.add_argument("--websocket", type=int, help="WebSocket port for live mode")
     parser.add_argument("--output", type=str, help="Path to save outputs (optional)")
     args = parser.parse_args()
 
-    # deeplab model setup    
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = LaneSegmentationModel(n_classes=1).to(device)
-    model.load_state_dict(torch.load(config.LANE_MODEL, map_location=device))
-    model.eval()
 
     # video processing
-    cap = cv2.VideoCapture(args.input)
+    if args.input: cap = cv2.VideoCapture(args.input)
 
     # set arguments
     out = None
@@ -64,74 +64,49 @@ def main():
         fps = cap.get(cv2.CAP_PROP_FPS)
         out = cv2.VideoWriter(f"{args.output}/replay.mp4", fourcc, fps, (width, height))
 
+    process_frame = ProcessFrame(out)
+
     try:
-        first_point = True
-        frame_idx = 0
-        while(cap.isOpened()):
-            # read the frame
-            ret, frame = cap.read()
-            if not ret: break
-            if frame is None: continue
 
-            frame_idx += 1
-            if frame_idx != 1 and frame_idx % config.STEP != 0: continue
+        if args.input:
+            while(cap.isOpened()):
+                ret, frame = cap.read()
+                if not ret: break
+                if frame is None: continue
 
-            t_sec = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                result = process_frame.process_frame(frame)
 
-            display = frame.copy()
-                    
-            # predict lane
-            pred_mask = deeplab_predict(model, device, frame.copy()) 
-            if pred_mask is None: continue
+                if result is None: continue
+                x_smooth, y_smooth, t_sec = result
 
-            # overlay 
-            mask_color = np.zeros_like(frame)
-            mask_color[:, :, 1] = pred_mask  # green
-            display = cv2.addWeighted(frame, 1.0, mask_color, 0.4, 0)
+                save_points_csv("outputs", int(x_smooth), int(y_smooth), t_sec) 
+                save_points_csv(args.output, int(x_smooth), int(y_smooth), t_sec)
 
-            # TODO: VALIDATE MASK
-            # post process the lane
-            extraction, mask_boundaries = post_process.apply(pred_mask.copy(), frame.copy()) 
-            if extraction is None or mask_boundaries is None: continue
-            left_angle, right_angle = mask_boundaries
-            if left_angle is None or right_angle is None: continue
+                send_point(conn, x_smooth, y_smooth)
 
-            # find the ball
-            found_ball_point = find_ball(extraction.copy(), display)
-            if not found_ball_point: 
-                create_display("Lane Display", display, out=out) # show only segmented lane
-                continue # no need for further processing
-            create_display("Lane Display", display, out=out) # display segmented lane and ball
+        elif args.websocket:
+            recv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            recv_sock.bind(("127.0.0.1", args.websocket))
+            recv_sock.listen(1)
+            frame_conn, _ = recv_sock.accept()
 
-            # see birds-eye view
-            full_warp, M_full = perspective.transform(frame.copy(), extraction.copy(), 
-                                                      left_angle, right_angle, 
-                                                      alpha=2.3) 
-            if full_warp is None or M_full is None: continue
-            create_display("Birds Eye View", full_warp)
+            while True:
+                data = frame_conn.recv(65536)
+                if not data:
+                    break
 
-            # convert detected point to perspective transformed point
-            pt = np.array(found_ball_point, dtype=np.float32).reshape(1, 1, 2)
-            pt_warped = cv2.perspectiveTransform(pt, M_full)
-            x_w, y_w = pt_warped[0, 0]
-            if first_point:
-                first_point = False 
-                y_w = y_w-50 # constant to increase y
-                x_w = x_w-10 # constant to increase x
-            else:
-                y_w = y_w-170 # constant to increase y
+                nparr = np.frombuffer(data, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if frame is None:
+                    continue
 
-            x_smooth, y_smooth = draw_path_smooth(int(x_w), int(y_w), ball_trajectory, full_warp)  
+                x_smooth, y_smooth = process_frame.process_frame(frame)
 
-            save_points_csv("outputs", int(x_smooth), int(y_smooth), t_sec) 
-            save_points_csv(args.output, int(x_smooth), int(y_smooth), t_sec)
-            
-            # send the data 
-            msg = [float(x_smooth), float(y_smooth)]
-            try:
-                conn.sendall((json.dumps(msg) + "\n").encode())
-            except (BrokenPipeError, ConnectionResetError):
-                break
+                save_points_csv("outputs", int(x_smooth), int(y_smooth), 0)
+                save_points_csv(args.output, int(x_smooth), int(y_smooth), 0)
+
+                send_point(conn, x_smooth, y_smooth)
+
 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Cleaning up gracefully...")
