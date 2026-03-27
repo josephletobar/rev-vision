@@ -1,11 +1,11 @@
 # RevVision
 
-RevVision delivers human-centered sports analytics using Meta glasses for computer vision, currently focused on bowling. The system extracts information from a first-person wearable perspective to help users understand their performance.
+RevVision delivers human-centered sports analytics for bowling using Meta glasses for computer vision. The system extracts information from a first-person wearable perspective to help users understand their performance.
 
 ## Key Features
 - Processes first-person video from Meta smart glasses and produces visualizations and performance metrics in real time (when deployed on a GPU-backed processing environment).
 - Segments the bowling lane to isolate relevant playing surfaces and applies geometric transformations, including perspective correction and spatial warping, to normalize the view.
-- Detects the bowling ball and tracks its trajectory through each shot, extracting metrics such as speed and curvature.
+- Detects the ball and tracks its trajectory through each shot, extracting metrics such as speed and curvature.
 - Displays lane visualization metrics on the Meta display HUD.
   > Note: Until the Meta Wearables SDK provides native access, this is coordinated through a video call. See: https://github.com/josephletobar/glass-sync
 
