@@ -7,16 +7,21 @@ from vision.trajectory import Trajectory
 import torch
 import config
 
+
+
 import logging
 logging.getLogger("ultralytics").setLevel(logging.ERROR)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-ball_model = YOLO(config.BALL_MODEL).to(device)
 
-if torch.cuda.is_available():
-    print(f"[YOLO] CUDA active: {torch.cuda.get_device_name(0)}")
-else:
-    print("[YOLO] CPU only")
+# ball_model = YOLO(config.BALL_MODEL).to(device)
+
+
+
+# if torch.cuda.is_available():
+#     print(f"[YOLO] CUDA active: {torch.cuda.get_device_name(0)}")
+# else:
+#     print("[YOLO] CPU only")
 
 # NOTE: Not using
 class ExtrapolatePoints():
@@ -78,13 +83,15 @@ class ExponentialMovingAvg():
 
         return smoothed_point
 
-def find_ball(frame, display):
+def find_ball(frame, ball_model, display):
 
-    with torch.no_grad(): ball_results = ball_model(frame, conf=0.4, imgsz=640) # run inference
+    with torch.no_grad(): 
+        ball_model.set_image(frame)
+        ball_results = ball_model(text=["bowling ball"])
             
     if ball_results[0].boxes is None or len(ball_results[0].boxes) == 0:
-
         return None
+    else: print(ball_results)
         
     ball_x1, ball_y1, ball_x2, ball_y2 = map(int, ball_results[0].boxes.xyxy[0].tolist())
     ball_cx = (ball_x1 + ball_x2) // 2

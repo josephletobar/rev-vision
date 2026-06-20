@@ -1,6 +1,7 @@
 import argparse
 import subprocess
 import os
+import sys
 from datetime import datetime
 from time import sleep
 from config import CSV_READ
@@ -28,19 +29,19 @@ if OUTPUT:
 
 if args.input:
     p1 = subprocess.Popen(
-        ["python3", "main.py", "--input", INPUT_VIDEO]
+        [sys.executable, "main.py", "--input", INPUT_VIDEO]
         + (["--output", output_dr] if OUTPUT else [])
     )
 if args.websocket:
     p1 = subprocess.Popen(
-        ["python3", "main.py", "--websocket", str(SOCKET_PORT)]
+        [sys.executable, "main.py", "--websocket", str(SOCKET_PORT)]
         + (["--output", output_dr] if OUTPUT else [])
     )
 
 sleep(5)
 
 p2 = subprocess.Popen(
-    ["python3", "-m", "vision.lane_visual"]
+    [sys.executable, "-m", "vision.lane_visual"]
     + (["--output", f"{output_dr}/lane_visual.mp4"] if OUTPUT else [])
 )
 

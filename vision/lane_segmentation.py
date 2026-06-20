@@ -8,11 +8,20 @@ import cv2
 import torch.optim as optim
 import config
 
+try:
+    from torchvision.models import ResNet18_Weights
+except ImportError:
+    ResNet18_Weights = None
+
 class LaneSegmentationModel(nn.Module):
     def __init__(self, n_classes=1, backbone='resnet18', pretrained=True):
         super().__init__()
         if backbone == 'resnet18':
-            self.encoder = models.resnet18(pretrained=pretrained)
+            if ResNet18_Weights is None:
+                self.encoder = models.resnet18(pretrained=pretrained)
+            else:
+                weights = ResNet18_Weights.DEFAULT if pretrained else None
+                self.encoder = models.resnet18(weights=weights)
             self.encoder_layers = list(self.encoder.children())
             
             # Remove fully connected layer and avgpool
@@ -81,3 +90,39 @@ def deeplab_predict(model, device,  frame):
     return mask_vis
 
 
+# TODO: No masks touching ball point?
+def sam_predict(frame, lane_model, found_ball_point):
+    h, w = frame.shape[:2]
+    x, y = map(int, found_ball_point)
+
+    if x < 0 or x >= w or y < 0 or y >= h:
+        return np.zeros((h, w), dtype=np.uint8)
+
+    with torch.no_grad():
+        lane_model.set_image(frame)
+        lane_results = lane_model(text=["bowling lane"])
+
+    result = lane_results[0]
+    if result.masks is None or result.masks.data is None:
+        print("[SAM3 lane] no masks")
+        return np.zeros((h, w), dtype=np.uint8)
+
+    masks = result.masks.data  # [N, mask_h, mask_w]
+    print(f"[SAM3 lane] masks={len(masks)} point=({x}, {y})")
+    kept_mask = None
+
+    for mask_tensor in masks:
+        mask = mask_tensor.detach().cpu().numpy().astype(np.uint8)
+
+        if mask.shape != (h, w):
+            mask = cv2.resize(mask, (w, h), interpolation=cv2.INTER_NEAREST)
+
+        if mask[y, x] > 0:
+            kept_mask = mask
+            break
+
+    if kept_mask is None:
+        print("[SAM3 lane] no mask touched ball point")
+        return np.zeros((h, w), dtype=np.uint8)
+
+    return (kept_mask * 255).astype(np.uint8)

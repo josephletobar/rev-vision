@@ -3,11 +3,12 @@ import cv2
 import numpy as np
 import torch
 import config
-from vision.lane_segmentation import LaneSegmentationModel, deeplab_predict
+from vision.lane_segmentation import LaneSegmentationModel, deeplab_predict, sam_predict
 from vision.detect_ball_yolo import find_ball, draw_path_smooth
 from vision.mask_processing import PostProcessor
 from vision.perspective_transformer import BirdsEyeTransformer
 from vision.trajectory import Trajectory
+from ultralytics.models.sam import SAM3SemanticPredictor
 
 class ProcessFrame():
 
@@ -25,9 +26,23 @@ class ProcessFrame():
         # deeplab model setup    
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = LaneSegmentationModel(n_classes=1).to(self.device)
-        self.model.load_state_dict(torch.load(config.LANE_MODEL, map_location=self.device))
+        self.model.load_state_dict(
+            torch.load(config.LANE_MODEL, map_location=self.device, weights_only=True)
+        )
         self.model.eval()
         
+
+        overrides = dict(
+            conf=0.7,
+            task="segment",
+            mode="predict",
+            model="weights/sam3.pt",
+            half=True,  # Use FP16 for faster inference
+            save=False,
+        )
+        self.sam3 = SAM3SemanticPredictor(overrides=overrides)
+        self.sam3.setup_model(verbose=True)
+
         pass
 
     def _create_display(self, name, display, out=False):
@@ -45,17 +60,27 @@ class ProcessFrame():
         # t_sec = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
 
         display = frame.copy()
+
+        # find the ball
+        found_ball_point = find_ball(frame.copy(), self.sam3, display)
+        if not found_ball_point: 
+            self._create_display("Lane Display", display, out=self.out) # show only segmented lane
+            return None # no need for further processing
+        else: print(found_ball_point)
                 
         # predict lane
-        device = self.device
-        model = self.model
-        pred_mask = deeplab_predict(model, device, frame.copy()) 
+        # device = self.device
+        # model = self.model
+        # pred_mask = deeplab_predict(model, device, frame.copy()) 
+        # if pred_mask is None: return None
+        pred_mask = sam_predict(frame, self.sam3, found_ball_point)
         if pred_mask is None: return None
 
         # overlay 
         mask_color = np.zeros_like(frame)
         mask_color[:, :, 1] = pred_mask  # green
-        display = cv2.addWeighted(frame, 1.0, mask_color, 0.4, 0)
+        display = cv2.addWeighted(display, 1.0, mask_color, 0.4, 0)
+        self._create_display("Lane Display", display, out=self.out)
 
         # TODO: VALIDATE MASK
         # post process the lane
@@ -64,15 +89,6 @@ class ProcessFrame():
         if extraction is None or mask_boundaries is None: return None
         left_angle, right_angle = mask_boundaries
         if left_angle is None or right_angle is None: return None
-
-
-
-        # find the ball
-        found_ball_point = find_ball(extraction.copy(), display)
-        if not found_ball_point: 
-            self._create_display("Lane Display", display, out=self.out) # show only segmented lane
-            return None # no need for further processing
-        self._create_display("Lane Display", display, out=self.out) # display segmented lane and ball
 
         # see birds-eye view
         perspective = self.perspective

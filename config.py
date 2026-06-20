@@ -1,5 +1,5 @@
 
-STEP = 1 # Video reading step
+STEP = 15 # Video reading step
 VIDEO_FPS = 30 # Glasses FPS
 
 CSV_READ = "outputs/points.csv"
